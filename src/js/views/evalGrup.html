@@ -1,0 +1,75 @@
+<!--
+ Copyright (c) 2014, 2019, Oracle and/or its affiliates.
+ The Universal Permissive License (UPL), Version 1.0
+ -->
+<div class="oj-hybrid-applayout-page">
+  <div class="oj-applayout-fixed-top">
+    <!--
+       ** Oracle JET V8.0.0 hybrid mobile application header pattern.
+       ** Please see the Oracle JET Cookbook App Shell: Hybrid Mobile demos for
+       ** more information on how to use this pattern.
+    -->
+    <header role="banner" class="oj-hybrid-applayout-header">
+      <oj-module config="[[headerConfig]]"></oj-module>
+    </header>
+  </div>
+  <!-- This is where your main page content will be loaded -->
+  <div class="oj-applayout-content">
+    <div role="main" class="oj-hybrid-applayout-content">
+      <div class="oj-hybrid-padding">
+        <div>
+          <oj-tab-bar edge="top" selection="{{evaluacionSeleccionada}}">
+            <ul>
+              <li id="eval-escuela">
+                <a href="#" aria-controls="panel-reporte-por-escuela" id="tab-eval-escuela">
+                  <h4>Evaluaci&oacute;n escolar</h4>
+                </a>
+              </li>
+              <li id="eval-grupal">
+                <a href="#" aria-controls="panel-reporte-por-grupo" id="tab-eval-grupal">
+                  <h4>Evaluaci&oacute;n grupal</h4>
+                </a>
+              </li>
+            </ul>
+          </oj-tab-bar>
+          <br />
+          <oj-label style="font-size: 18px;" for="seleccionadorEscuela">Selecciona una escuela:</oj-label>
+          <oj-select-one style="width: 500px;" id="seleccionadorEscuela" options="[[origenDatosEscuelas]]"
+            value="{{escuelaSeleccionada}}" on-value-changed="[[cambioEscuela]]"></oj-select-one>
+          <oj-switcher value="[[evaluacionSeleccionada]]">
+            <div slot="eval-escuela" id="panel-reporte-por-escuela" role="tabpanel" aria-labelledby="tab-eval-escuela">
+              <oj-chart id="graficaGrupo" type="pie" data="[[porcentajesEscuelas]]" animation-on-display="auto"
+                animation-on-data-change="auto" hover-behavior="dim" style="max-width:500px;width:100%;height:350px;">
+                <template slot='itemTemplate' data-oj-as='item'>
+                  <oj-chart-item value='[[item.data.valor]]' group-id='[[ [item.data.escuela] ]]'
+                    series-id='[[item.data.serie]]'>
+                  </oj-chart-item>
+                </template>
+              </oj-chart>
+              <div style="width: 100%; text-align: center;">
+                <oj-button on-oj-action="[[descargarImagen]]">Descargar reporte</oj-button>
+              </div>
+            </div>
+            <div slot="eval-grupal" id="panel-reporte-por-grupo" role="tabpanel" aria-labelledby="tab-eval-grupal">
+              <br />
+              <oj-label style="font-size: 18px;" for="seleccionadorGrupo">Selecciona una grupo:</oj-label>
+              <oj-select-one style="width: 500px;" id="seleccionadorGrupo" options="[[origenDatosGrupos]]"
+                value="{{grupoSeleccionado}}" on-value-changed="[[cambioGrupo]]"></oj-select-one>
+              <oj-chart id="graficaGrupo" type="pie" data="[[porcentajesGrupos]]" animation-on-display="auto"
+                animation-on-data-change="auto" hover-behavior="dim" style="max-width:500px;width:100%;height:350px;">
+                <template slot='itemTemplate' data-oj-as='item'>
+                  <oj-chart-item value='[[item.data.valor]]' group-id='[[ [item.data.escuela] ]]'
+                    series-id='[[item.data.serie]]'>
+                  </oj-chart-item>
+                </template>
+              </oj-chart>
+              <div style="width: 100%; text-align: center;">
+                <oj-button on-oj-action="[[descargarImagen]]">Descargar reporte</oj-button>
+              </div>
+            </div>
+          </oj-switcher>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
