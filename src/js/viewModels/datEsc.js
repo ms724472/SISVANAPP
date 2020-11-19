@@ -63,6 +63,28 @@ define(['knockout', 'jquery', 'appController', 'ojs/ojmodule-element-utils', 'ac
           var listaVista = document.createElement('oj-list-view');
           var lista = document.createElement('ul');
 
+          var barraHGrupos = document.createElement('oj-toolbar');
+          barraHGrupos.style.width = "100%";
+          barraHGrupos.classList.add("oj-toolbar-bottom-border");
+          barraHGrupos.classList.add("oj-sm-justify-content-space-around");
+
+          var botonAgregarGrupo = document.createElement("oj-button");
+          botonAgregarGrupo.setAttribute("display", "icons");
+          var iconoBotonAGrupo = document.createElement("span");
+          iconoBotonAGrupo.setAttribute("slot", "startIcon");
+          iconoBotonAGrupo.classList.add("oj-ux-ico-add-create-page");
+          botonAgregarGrupo.appendChild(iconoBotonAGrupo);
+
+          var botonEditarGrupo = document.createElement("oj-button");
+          botonEditarGrupo.setAttribute("display", "icons");
+          var iconoBotonEGrupo = document.createElement("span");
+          iconoBotonEGrupo.setAttribute("slot", "startIcon");
+          iconoBotonEGrupo.classList.add("oj-ux-ico-add-edit-page");
+          botonEditarGrupo.appendChild(iconoBotonEGrupo);
+
+          barraHGrupos.appendChild(botonAgregarGrupo);
+          barraHGrupos.appendChild(botonEditarGrupo);
+
           var listaVistaGrupos = document.createElement('oj-list-view');
           listaVistaGrupos.setAttribute("selection-mode", "single");
           listaVistaGrupos.setAttribute("translations.msg-no-data", "Sin grupos");
@@ -125,6 +147,7 @@ define(['knockout', 'jquery', 'appController', 'ojs/ojmodule-element-utils', 'ac
           listaVista.appendChild(lista);
           listaVistaGrupos.appendChild(listaGrupos);
           menuGrupos.appendChild(tituloGrupos);
+          menuGrupos.appendChild(barraHGrupos);
           menuGrupos.appendChild(listaVistaGrupos);
           
           colapsableEscuela.appendChild(nombreEscuela);
