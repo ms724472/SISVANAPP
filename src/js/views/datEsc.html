@@ -17,9 +17,24 @@
   <div class="oj-applayout-content">
     <div role="main" class="oj-hybrid-applayout-content">
       <div class="oj-hybrid-padding">
-        <h1>Profile Content Area</h1>
         <div>
-            To change the content of this section, you will make edits to the profile.html file located in the /js/views folder.
+          <!-- <oj-button on-oj-action="[[addMenu]]">TEST</oj-button> -->
+          <div id="contenedor-escuelas" style="width: 1px; min-width: 100%;">
+            <oj-label>Agrega o selecciona una escuela:</oj-label>
+            <oj-toolbar style="width: 100%;" id='barra-herramientas' aria-label='Barra de herramientas' aria-controls='controlled'
+              class="oj-toolbar-bottom-border oj-sm-justify-content-space-around">
+              <oj-button id='agregar-alumno' display='icons'>
+                <span slot='startIcon' class='oj-ux-ico-add-create-page'></span>
+                Agregar escuela
+              </oj-button>
+              <oj-button id='editar-alumno' display='icons'>
+                <span slot='startIcon' class='oj-ux-ico-add-edit-page'></span>
+                Editar escuela
+              </oj-button>
+            </oj-toolbar>
+            <oj-accordion id="lista-escuelas">              
+            </oj-accordion>
+          </div>
         </div>
       </div>
     </div>

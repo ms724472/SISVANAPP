@@ -18,17 +18,31 @@
     <div role="main" class="oj-hybrid-applayout-content">
       <div class="oj-hybrid-padding">
         <div class="oj-form-layout">
-          <div class="oj-form oj-sm-odd-cols-12 oj-md-odd-cols-4 oj-md-labels-inline" align="center">
-            <oj-accordion>
-              <oj-collapsible expanded="true">
-                <h3 slot="header">Indices Z masa para ni&ntilde;as</h3>
-                <oj-chart id="lineChart" type="line" data="[[origenDatosZNinas]]" animation-on-display="auto"
-                  animation-on-data-change="auto" orientation="[[orientationValue]]" hover-behavior="dim"
-                  style="max-width:500px;width:100%;height:350px;display: inline-block;">
+          <oj-label for="selector-diagnostico">Selecciona un tipo de puntaje:</oj-label>
+          <oj-select-one id="selector-diagnostico" options="[[tiposPuntajes]]" value="{{tipoPuntaje}}" on-value-changed="[[actualizarPuntajes]]">            
+          </oj-select-one>
+          <div class="oj-form oj-sm-odd-cols-12 oj-md-odd-cols-4 oj-md-labels-inline" style="position: relative;">
+            <oj-accordion style="width:100%;position: absolute;">
+              <oj-collapsible expanded="true" style="width:100%;position: relative;">
+                <h3 slot="header">Puntajes Z para ni&ntilde;as</h3>
+                <oj-chart id="lineChart" 
+                          type="line" 
+                          data="[[origenDatosZNinas]]" 
+                          animation-on-display="auto"
+                          animation-on-data-change="auto" 
+                          orientation="[[orientationValue]]" 
+                          hover-behavior="dim"
+                          style="max-width:unset;width:100%;height:350px;display: inline-block;padding: unset;" 
+                          translations.label-series="Nivel"
+                          translations.label-group="Meses"
+                          translations.label-value="Valor"
+                          translations.label-no-data="Cargando...">
                   <template slot="itemTemplate" data-oj-as="item">
-                    <oj-chart-item value="[[item.data.valor]]" group-id="[[ [item.data.mes] ]]"
-                      series-id="[[item.data.serie]]">
-                    </oj-chart-item>
+                      <oj-chart-item value="[[item.data.valor]]" group-id="[[ [item.data.mes] ]]" 
+                        series-id="[[item.data.serie.replace('sd', '').includes('_neg') ? 
+                                   '-' + item.data.serie.replace('sd', '').replace('_neg','') : 
+                                   item.data.serie.replace('sd', '')]]">
+                      </oj-chart-item>
                   </template>
                   <template slot="seriesTemplate" data-oj-as="series">
                     <oj-chart-series color="[[series.id.includes('3') ? '#000000': 
@@ -40,14 +54,25 @@
                   </template>
                 </oj-chart>
               </oj-collapsible>
-              <oj-collapsible>
-                <h3 slot="header">Indices Z masa para ni&ntilde;os</h3>
-                <oj-chart id="lineChart" type="line" data="[[origenDatosZNinos]]" animation-on-display="auto"
-                  animation-on-data-change="auto" orientation="[[orientationValue]]" hover-behavior="dim"
-                  style="max-width:500px;width:100%;height:350px;display: inline-block;">
+              <oj-collapsible style="width:100%;position: relative;">
+                <h3 slot="header">Puntajes Z para ni&ntilde;os</h3>
+                <oj-chart id="lineChart" 
+                          type="line" 
+                          data="[[origenDatosZNinos]]" 
+                          animation-on-display="auto"
+                          animation-on-data-change="auto" 
+                          orientation="[[orientationValue]]" 
+                          hover-behavior="dim"
+                          style="max-width:unset;width:100%;height:350px;display: inline-block;padding: unset;" 
+                          translations.label-series="Nivel"
+                          translations.label-group="Meses"
+                          translations.label-value="Valor"
+                          translations.label-no-data="Cargando...">
                   <template slot="itemTemplate" data-oj-as="item">
                     <oj-chart-item value="[[item.data.valor]]" group-id="[[ [item.data.mes] ]]"
-                      series-id="[[item.data.serie]]">
+                      series-id="[[item.data.serie.replace('sd', '').includes('_neg') ? 
+                                 '-' + item.data.serie.replace('sd', '').replace('_neg','') : 
+                                 item.data.serie.replace('sd', '')]]">
                     </oj-chart-item>
                   </template>
                   <template slot="seriesTemplate" data-oj-as="series">

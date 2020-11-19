@@ -91,14 +91,14 @@
       "cdn": "3rdparty",
       "cwd": "node_modules/@oracle/oraclejet/dist/js/libs/dnd-polyfill",
       "debug": {
-        "src": "dnd-polyfill-1.0.1.js",
-        "path": "libs/dnd-polyfill/dnd-polyfill-1.0.1.js",
-        "cdnPath": "dnd-polyfill/dnd-polyfill-1.0.1"
+        "src": "dnd-polyfill-1.0.2.js",
+        "path": "libs/dnd-polyfill/dnd-polyfill-1.0.2.js",
+        "cdnPath": "dnd-polyfill/dnd-polyfill-1.0.2"
       },
       "release": {
-        "src": "dnd-polyfill-1.0.1.min.js",
-        "path": "libs/dnd-polyfill/dnd-polyfill-1.0.1.min.js",
-        "cdnPath": "dnd-polyfill/dnd-polyfill-1.0.1.min"
+        "src": "dnd-polyfill-1.0.2.min.js",
+        "path": "libs/dnd-polyfill/dnd-polyfill-1.0.2.min.js",
+        "cdnPath": "dnd-polyfill/dnd-polyfill-1.0.2.min"
       }
     },
 

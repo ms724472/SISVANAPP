@@ -7,13 +7,14 @@
 /*
  * Your incidents ViewModel code goes here
  */
-define(['knockout', 'appController', 'ojs/ojmodule-element-utils', 'accUtils', 'ojs/ojlistview', 'ojs/ojtable', 'ojs/ojselectcombobox',
+define(['knockout', 'ojs/ojcore', 'appController', 'ojs/ojmodule-element-utils', 'accUtils', 'ojs/ojlistview', 'ojs/ojtable', 'ojs/ojselectcombobox',
   'ojs/ojinputtext', 'ojs/ojaccordion', 'ojs/ojdialog', 'ojs/ojarraydataprovider', 'ojs/ojchart', 'ojs/ojarraytabledatasource',
-  'ojs/ojdatetimepicker', 'ojs/ojtimezonedata', 'ojs/ojprogress'],
-  function (ko, app, moduleUtils, accUtils) {
+  'ojs/ojdatetimepicker', 'ojs/ojtimezonedata', 'ojs/ojprogress', 'ojs/ojselectsingle', 'ojs/ojtoolbar'],
+  function (ko, oj, app, moduleUtils, accUtils) {
 
     function IncidentsViewModel() {
       var self = this;
+      var grupos = {};
       self.datosAlumno = ko.observable();
       self.idAlumno = ko.observable();
       self.medicion1 = ko.observable();
@@ -28,9 +29,31 @@ define(['knockout', 'appController', 'ojs/ojmodule-element-utils', 'accUtils', '
       self.alumnoSeleccionado = ko.observable();
       self.nuevoEscuelaAlumno = ko.observable();
       self.origenDatosEscuelas = ko.observable();
+      self.origenDatosGrupos = ko.observable();
       self.nuevoSexoAlumno = ko.observable();
       self.nuevoGradoAlumno = ko.observable();
       self.nuevoGrupoAlumno = ko.observable();
+      self.colorIndicador = ko.observable("#237BB1");
+      self.datosIMC = ko.observable();
+      self.datosEstatura = ko.observable();
+      self.datosPeso  = ko.observable();
+      self.tituloIMC = ko.pureComputed(function () {
+        return {
+            title: "Histórico IMC"
+        };
+      });
+
+      self.tituloTalla = ko.pureComputed(function () {
+        return {
+            title: "Histórico Talla"
+        };
+      });
+
+      self.tituloPeso = ko.pureComputed(function () {
+          return {
+              title: "Histórico Peso"
+          };
+      });
 
       function ChartModel() {
         /* toggle button variables */
@@ -39,19 +62,45 @@ define(['knockout', 'appController', 'ojs/ojmodule-element-utils', 'accUtils', '
         this.datosEstatura = new oj.ArrayDataProvider(JSON.parse(mediciones), { keyAttributes: 'id' });
       }
 
+      var peticionGrupos = new XMLHttpRequest();
+      peticionGrupos.open("GET", oj.gWSUrl() + "grupos/obtenerTodosLosGrupos/hoy", false);
+      peticionGrupos.onreadystatechange = function () {
+        if (this.readyState === 4) {
+          if (this.status === 200) {
+            var jsonResponse = JSON.parse(this.responseText);
+            if (jsonResponse.hasOwnProperty("error")) {
+              alert('Error al inicializar el modulo, por favor contacta al administrador.');
+            } else {
+              if (Object.keys(jsonResponse).length < 1) {
+                alert("Debe agregar un grupo para agregar nuevos alumnos o mediciones.")
+              } else {
+                grupos = jsonResponse;
+                var gruposEscuela = $.extend([], grupos[Object.keys(grupos)[0]]);
+                gruposEscuela.splice(0, 0, { value: -1, label: "NO SELECCIONADO" });
+                self.origenDatosGrupos(new oj.ArrayDataProvider(gruposEscuela, { keyAttributes: 'value' }));
+                self.nuevoGrupoAlumno(-1);
+                self.nuevoEscuelaAlumno(-1);
+              }
+            }
+          }
+        }
+      };      
+
       $.ajax({
         type: "GET",
         contentType: "text/plain; charset=utf-8",
-        url: "http://sisvan-iteso.online/SISVANWS/rest/wls/1.0/obtenerEscuelas",
+        url: oj.gWSUrl() + "obtenerEscuelas",
         dataType: "text",
         async: false,
         success: function (data) {
-          json = $.parseJSON(data);
+          json = JSON.parse(data);
           if (json.hasOwnProperty("error")) {
             alert('No se encontro ninguna escuela');
             return;
           } else {
+            json.escuelas.splice(0, 0, {value:-1,label:"NO SELECCIONADA"});
             self.origenDatosEscuelas(new oj.ArrayDataProvider(json.escuelas));
+            peticionGrupos.send();
           }
         }
       }).fail(function () {
@@ -63,7 +112,22 @@ define(['knockout', 'appController', 'ojs/ojmodule-element-utils', 'accUtils', '
       self.headerConfig = ko.observable({ 'view': [], 'viewModel': null });
       moduleUtils.createView({ 'viewPath': 'views/header.html' }).then(function (view) {
         self.headerConfig({ 'view': view, 'viewModel': new app.getHeaderModel() })
-      })
+      });
+
+      self.escuelaSeleccionada = function (event) {
+        var id_escuela = event['detail'].value.toString();
+        if (id_escuela !== "" && Object.keys(grupos).length > 0) {
+          var gruposEscuela;
+          if (grupos.hasOwnProperty(id_escuela)) {
+            gruposEscuela = $.extend([], grupos[id_escuela]);
+            gruposEscuela.splice(0, 0, { value: -1, label: "NO SELECCIONADO" });
+          } else {
+            gruposEscuela = [{ value: -1, label: "NO SELECCIONADO" }];
+          }
+          self.origenDatosGrupos(new oj.ArrayDataProvider(gruposEscuela, { keyAttributes: 'value' }));
+          self.nuevoGrupoAlumno(-1);
+        }
+      };
 
       // Below are a set of the ViewModel methods invoked by the oj-module component.
       // Please reference the oj-module jsDoc for additional information.
@@ -71,11 +135,11 @@ define(['knockout', 'appController', 'ojs/ojmodule-element-utils', 'accUtils', '
         $.ajax({
           type: "GET",
           contentType: "text/plain; charset=utf-8",
-          url: "http://sisvan-iteso.online/SISVANWS/rest/wls/1.0/alumnos/obtenerDatos/" + self.idAlumno(),
+          url: oj.gWSUrl() + "alumnos/obtenerDatos/" + self.idAlumno(),
           dataType: "text",
           async: false,
           success: function (data) {
-            json = $.parseJSON(data);
+            json = JSON.parse(data);
             if (json.hasOwnProperty("error") && json.error !== "No hay datos.") {
               alert('Error de autenticación, por favor revisa tus datos.');
               return;
@@ -99,14 +163,17 @@ define(['knockout', 'appController', 'ojs/ojmodule-element-utils', 'accUtils', '
                     campo["campo"] = "Grupo";
                     break;
                   default:
-                    campo["campo"] = llave[0].toUpperCase() + llave.slice(1);
+                    campo["campo"] = llave[0].toUpperCase() + llave.slice(1).replace("_", " ");
                     break;
                 }
                 campo["valor"] = json.datos[0][llave];
-                campos.push(campo);
-                indice++;
+                if(!llave.includes("id")) {
+                  campos.push(campo);
+                  indice++;
+                }
               }
               self.datosAlumno(new oj.ArrayDataProvider(campos, { keyAttributes: 'id' }));
+              self.colorIndicador(json.datos[0].sexo === "FEMENINO" ? "#E4007C" : "#237BB1"); 
             }
           }
         }).fail(function () {
@@ -117,11 +184,11 @@ define(['knockout', 'appController', 'ojs/ojmodule-element-utils', 'accUtils', '
         $.ajax({
           type: "GET",
           contentType: "text/plain; charset=utf-8",
-          url: "http://sisvan-iteso.online/SISVANWS/rest/wls/1.0/alumnos/obtenerMediciones/" + self.idAlumno(),
+          url: oj.gWSUrl() + "alumnos/obtenerMediciones/" + self.idAlumno(),
           dataType: "text",
           async: false,
           success: function (data) {
-            json = $.parseJSON(data);
+            json = JSON.parse(data);
             if (json.hasOwnProperty("error") && json.error !== "No hay datos.") {
               alert('Error de autenticación, por favor revisa tus datos.');
               return;
@@ -148,19 +215,39 @@ define(['knockout', 'appController', 'ojs/ojmodule-element-utils', 'accUtils', '
                     case "imc":
                       campo["campo"] = "Indice de Masa Corporal";
                       break;
+                      case "estatura":
+                        campo["campo"] = "Talla";
+                        break;
                     case "perimetro_cuello":
                       campo["campo"] = "Perimetro del cuello";
                       break;
                     case "pliegue_cuello":
                       campo["campo"] = "Pliegue del cuello";
                       break;
-                    default:
-                      campo["campo"] = llave[0].toUpperCase() + llave.slice(1);
+                    case "subescapula":
+                      campo["campo"] = "Subescapular";
+                      break;
+                    case "diagnostico_peso":
+                    case "diagnostico_talla":
+                    case "diagnostico_imc":
+                      var nombreMedicion = llave.split("_")[1];
+                      campo["campo"] = "Diagnóstico " + (nombreMedicion.includes("imc") ? "IMC" : (nombreMedicion[0].toUpperCase() + nombreMedicion.slice(1)));
+                      break;
+                    case "z_peso":
+                    case "z_talla":
+                    case "z_imc":
+                      var nombreMedicion = llave.split("_")[1];
+                      campo["campo"] = "Puntaje Z " + (nombreMedicion.includes("imc") ? "IMC" : (nombreMedicion[0].toUpperCase() + nombreMedicion.slice(1)));
+                      break;
+                    default:                    
+                      campo["campo"] = llave[0].toUpperCase() + llave.slice(1).replace("_", " ");
                       break;
                   }
                   campo["valor"] = medicion[llave];
-                  campos.push(campo);
-                  indice++;
+                  if(!llave.includes("id")) {
+                    campos.push(campo);
+                    indice++;
+                  }
                 }
 
                 switch (numMedicion) {
@@ -188,44 +275,50 @@ define(['knockout', 'appController', 'ojs/ojmodule-element-utils', 'accUtils', '
           return;
         });
 
-        $.ajax({
-          type: "GET",
-          contentType: "text/plain; charset=utf-8",
-          url: "http://sisvan-iteso.online/SISVANWS/rest/wls/1.0/alumnos/obtenerHistoricoMasa/" + self.idAlumno(),
-          dataType: "text",
-          async: false,
-          success: function (data) {
-            json = $.parseJSON(data);
-            if (json.hasOwnProperty("error") && json.error !== "No hay datos.") {
-              alert('Error de autenticación, por favor revisa tus datos.');
-              return;
-            } else {
-              self.dataProvider(new oj.ArrayDataProvider(json.mediciones, { keyAttributes: 'id' }));
+        var mediciones = ["imc", "talla", "peso"];
+        mediciones.forEach(function callback(medicionActual) {
+          var peticionHistotico = new XMLHttpRequest();
+          peticionHistotico.open("GET", oj.gWSUrl() + "alumnos/obtenerHistorico/" + medicionActual + "/" + self.idAlumno(), true);
+          peticionHistotico.onreadystatechange = function () {
+            if (this.readyState === 4) {
+              if (this.status === 200) {
+                var jsonResponse = JSON.parse(this.responseText);
+                if (jsonResponse.hasOwnProperty("error")) {
+                  if (jsonResponse.error === "No hay datos.") {
+                    switch(medicionActual) {
+                      case "imc":
+                        self.datosIMC(new oj.ArrayDataProvider([]));
+                        break;
+                      case "talla":
+                        self.datosEstatura(new oj.ArrayDataProvider([]));
+                        break;
+                      case "peso":
+                        self.datosPeso(new oj.ArrayDataProvider([]));
+                        break;
+                    } 
+                  } else {
+                    alert('No es posible obtener los datos, por favor contacta al administrador.');
+                  }
+                  return;
+                } else {
+                  switch(medicionActual) {
+                    case "imc":
+                      self.datosIMC(new oj.ArrayDataProvider(jsonResponse.mediciones, { keyAttributes: 'id' }));
+                      break;
+                    case "talla":
+                      self.datosEstatura(new oj.ArrayDataProvider(jsonResponse.mediciones, { keyAttributes: 'id' }));
+                      break;
+                    case "peso":
+                      self.datosPeso(new oj.ArrayDataProvider(jsonResponse.mediciones, { keyAttributes: 'id' }));
+                      break;
+                  }
+                }
+              } else {
+                alert("Error en el servidor, favor de comunicarse con el administrador.");
+              }
             }
-          }
-        }).fail(function () {
-          alert("Error en el servidor, favor de comunicarse con el administrador.");
-          return;
-        });
-
-        $.ajax({
-          type: "GET",
-          contentType: "text/plain; charset=utf-8",
-          url: "http://sisvan-iteso.online/SISVANWS/rest/wls/1.0/alumnos/obtenerHistoricoEstatura/" + self.idAlumno(),
-          dataType: "text",
-          async: false,
-          success: function (data) {
-            json = $.parseJSON(data);
-            if (json.hasOwnProperty("error") && json.error !== "No hay datos.") {
-              alert('Error de autenticación, por favor revisa tus datos.');
-              return;
-            } else {
-              self.datosEstatura(new oj.ArrayDataProvider(json.mediciones, { keyAttributes: 'id' }));
-            }
-          }
-        }).fail(function () {
-          alert("Error en el servidor, favor de comunicarse con el administrador.");
-          return;
+          };
+          peticionHistotico.send();
         });
       };
 
@@ -257,11 +350,11 @@ define(['knockout', 'appController', 'ojs/ojmodule-element-utils', 'accUtils', '
         $.ajax({
           type: "GET",
           contentType: "text/plain; charset=utf-8",
-          url: "http://sisvan-iteso.online/SISVANWS/rest/wls/1.0/alumnos/buscarPorNombre/" + nombreAlumno,
+          url: oj.gWSUrl() + "alumnos/buscarPorNombre/" + nombreAlumno,
           dataType: "text",
           async: false,
           success: function (data) {
-            json = $.parseJSON(data);
+            json = JSON.parse(data);
             if (json.hasOwnProperty("error") && json.error !== "No hay datos.") {
               alert('No se encontro ningun alumno');
               return;
@@ -313,7 +406,7 @@ define(['knockout', 'appController', 'ojs/ojmodule-element-utils', 'accUtils', '
             data: JSON.stringify(bodyRequest).replace(/]|[[]/g, ''),
             async: false,
             success: function (data) {
-                json = $.parseJSON(data);
+                json = JSON.parse(data);
                 if (json.hasOwnProperty("error")) {
                     document.getElementById('dialogoCargando').close();
                     alert('Error, por favor revisa tus datos.');
@@ -357,7 +450,7 @@ define(['knockout', 'appController', 'ojs/ojmodule-element-utils', 'accUtils', '
             data: JSON.stringify(bodyRequest).replace(/]|[[]/g, ''),
             async: false,
             success: function (data) {
-                json = $.parseJSON(data);
+                json = JSON.parse(data);
                 if (json.hasOwnProperty("error")) {
                     document.getElementById('dialogoCargando').close();
                     alert('Error, por favor revisa tus datos.');
@@ -387,12 +480,13 @@ define(['knockout', 'appController', 'ojs/ojmodule-element-utils', 'accUtils', '
     };
 
       self.seleccionarAlumno = function () {
-        var datos = '{"No se encontraron resultados":""}';
+        var datos = '{"NoData":""}';
         datos = JSON.parse("[" + datos + "]");
-        document.getElementById('num-alumno').value = self.alumnoSeleccionado();
+        document.getElementById('num-alumno').value = self.alumnoSeleccionado()._keys.values().next().value;
         document.getElementById('nombreABuscar').value = '';
-        self.origenDatosNombres(new oj.ArrayTableDataSource(datos));
+        self.origenDatosNombres(new oj.ArrayDataProvider(datos));
         document.getElementById('dialogoBuscarAlumno').close();
+        self.obtenerInfo();
       };
 
       /**
@@ -404,8 +498,8 @@ define(['knockout', 'appController', 'ojs/ojmodule-element-utils', 'accUtils', '
        * after being disconnected.
        */
       self.connected = function () {
-        accUtils.announce('Incidents page loaded.');
-        document.title = "Incidents";
+        accUtils.announce('Pagina Evaluacion Individual Cargada.');
+        document.title = "Evaluacion Individual";
         // Implement further logic if needed
       };
 

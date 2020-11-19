@@ -25,6 +25,10 @@
 
       // Path mappings for the logical module names
       paths:
+      /* DO NOT MODIFY
+       ** All paths are dynamicaly generated from the path_mappings.json file.
+       ** Add any new library dependencies in path_mappings json file.
+       */
       // injector:mainReleasePaths
       {
         'knockout': 'libs/knockout/knockout-3.5.0.debug',

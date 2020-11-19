@@ -7,13 +7,19 @@
 /*
  * Your customer ViewModel code goes here
  */
-define(['knockout', 'appController', 'ojs/ojmodule-element-utils', 'accUtils',
-'ojs/ojdatetimepicker', 'ojs/ojinputnumber', 'ojs/ojinputtext', 'ojs/ojcollapsible',
-  'ojs/ojarraydataprovider', 'ojs/ojchart', 'ojs/ojaccordion'],
-  function (ko, app, moduleUtils, accUtils) {
+define(['knockout', 'appController', 'ojs/ojmodule-element-utils', 'accUtils', 
+'ojs/ojarraydataprovider', 'ojs/ojdatetimepicker', 'ojs/ojinputnumber', 'ojs/ojinputtext',
+'ojs/ojcollapsible', 'ojs/ojchart', 'ojs/ojaccordion', 'ojs/ojselectcombobox'],
+  function (ko, app, moduleUtils, accUtils, ArrayDataProvider) {
 
     function CustomerViewModel() {
       var self = this;
+      var db = null;
+      var tipos = [
+        { value: "peso", label: "Peso" },
+        { value: "talla", label: "Talla" },
+        { value: "imc", label: "IMC" }
+      ];
 
       // Header Config
       self.headerConfig = ko.observable({ 'view': [], 'viewModel': null });
@@ -24,52 +30,73 @@ define(['knockout', 'appController', 'ojs/ojmodule-element-utils', 'accUtils',
       self.origenDatosZNinas = ko.observable();
       self.origenDatosZNinos = ko.observable();
       self.orientationValue = ko.observable();
+      self.orientationValue = ko.observable('vertical');
+      self.tipoPuntaje = ko.observable("peso");     
+      self.tiposPuntajes = new ArrayDataProvider(tipos, { keyAttributes: "value" });
+      
+      self.obtenerEstadisticas = function(transaccion, tipo, sexo) {
+        var tabla = "percentiles_oms_" + tipo;
+        var consultaEstadisticas = "SELECT cast(replace(id_percentil, ?, '') as unsigned) as mes, \n"
+          + "sd3, \n"
+          + "sd2, \n"
+          + "sd1, \n"
+          + "sd0, \n"
+          + "sd1_neg, \n"
+          + "sd2_neg, \n"
+          + "sd3_neg FROM \n"
+          + tabla + " WHERE id_percentil LIKE('%" + sexo + "%') \n"
+          + "ORDER BY mes";
+        transaccion.executeSql(consultaEstadisticas, [sexo], function(transaccion, resultados) {
+          var estadisticasJSON = [];
+          var contador = resultados.rows.length;
+          var idEstadistica = 0;
+          for (var indice = 0; indice < contador; indice++) {
+            var estActual = resultados.rows.item(indice);
+            var columnas = Object.keys(estActual);
+            var mes;
+            for (var subIndice in columnas) {
+              var serie = columnas[subIndice];
+              if (serie === "mes") {
+                mes = estActual[columnas[subIndice]];
+                continue;
+              }
 
-      function ChartModel() {
-        /* toggle button variables */
-        this.orientationValue = ko.observable('vertical');
-        $.ajax({
-          type: "GET",
-          contentType: "text/plain; charset=utf-8",
-          url: "http://sisvan-iteso.online/SISVANWS/rest/wls/1.0/estadisticas/obtenerPuntajesZMasa/Femenino",
-          dataType: "text",
-          async: false,
-          success: function (data) {
-            json = $.parseJSON(data);
-            if (json.hasOwnProperty("error") && json.error !== "No hay datos.") {
-              alert('Error de autenticación, por favor revisa tus datos.');
-              return;
-            } else {
-              self.origenDatosZNinas(new oj.ArrayDataProvider(json.mediciones, { keyAttributes: 'id' }));
+              var estActualJSON = {};
+              estActualJSON.id = idEstadistica;
+              estActualJSON.serie = columnas[subIndice];
+              estActualJSON.mes = mes;
+              estActualJSON.valor = estActual[columnas[subIndice]];
+              estadisticasJSON.push(estActualJSON);
+              idEstadistica++;
             }
           }
-        }).fail(function () {
-          alert("Error en el servidor, favor de comunicarse con el administrador.");
-          return;
+
+          switch(sexo) {
+            case "femenino":
+              self.origenDatosZNinos(new ArrayDataProvider(estadisticasJSON, { keyAttributes: 'id' }));
+              break;
+            case "masculino":
+              self.origenDatosZNinas(new ArrayDataProvider(estadisticasJSON, { keyAttributes: 'id' }));
+              break;
+          }          
+        }, function(transaccion, error) {
+          alert("Problemas con la aplicación, por favor reiniciala: " + error.code);
         });
+      };
 
-        $.ajax({
-          type: "GET",
-          contentType: "text/plain; charset=utf-8",
-          url: "http://sisvan-iteso.online/SISVANWS/rest/wls/1.0/estadisticas/obtenerPuntajesZMasa/Masculino",
-          dataType: "text",
-          async: false,
-          success: function (data) {
-            json = $.parseJSON(data);
-            if (json.hasOwnProperty("error") && json.error !== "No hay datos.") {
-              alert('Error en el servidor, favor de comunicarse con el administrador.');
-              return;
-            } else {
-              self.origenDatosZNinos(new oj.ArrayDataProvider(json.mediciones, { keyAttributes: 'id' }));
-            }
-          }
-        }).fail(function () {
-          alert("Error en el servidor, favor de comunicarse con el administrador.");
-          return;
+      self.actualizarPuntajes = function(event) {
+        db.transaction(function(transaccion) {
+          self.obtenerEstadisticas(transaccion, self.tipoPuntaje(), "femenino");
+          self.obtenerEstadisticas(transaccion, self.tipoPuntaje(), "masculino");
+        }, function(error){
+            alert("Problemas con la aplicación, por favor reiniciala");
         });
       }
 
-      var chartModel = new ChartModel();
+      document.addEventListener("deviceready", function(){  
+          db = window.sqlitePlugin.openDatabase({name: "sve-base-datos.db", location: 'default', createFromLocation: 1});          
+          self.actualizarPuntajes();
+      }, false);
 
       // Below are a set of the ViewModel methods invoked by the oj-module component.
       // Please reference the oj-module jsDoc for additional information.
@@ -83,8 +110,8 @@ define(['knockout', 'appController', 'ojs/ojmodule-element-utils', 'accUtils',
        * after being disconnected.
        */
       self.connected = function () {
-        accUtils.announce('Customers page loaded.');
-        document.title = "Customers";
+        accUtils.announce("Estadísticas OMS cargadas.");
+        document.title = "Estadísticas OMS";
         // Implement further logic if needed
       };
 

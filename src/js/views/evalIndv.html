@@ -17,23 +17,53 @@
   <div class="oj-applayout-content">
     <div role="main" class="oj-hybrid-applayout-content">
       <div class="oj-hybrid-padding">
-        <oj-label-line for="num-alumno">Introduzca el número de alumno:</oj-label-line>
-        <oj-flex-item style="display: inline-flex; width: 100%;">
-          <oj-input-text id="num-alumno" value="{{idAlumno}}"></oj-input-text>
-          <oj-button on-oj-action="[[buscarAlumno]]"><span slot='endIcon'
-              class="oj-fwk-icon oj-fwk-icon-dots-horizontal"></span></oj-button>
-          <oj-button on-oj-action='[[obtenerMediciones]]'><span slot='endIcon'
+        <oj-label for="num-alumno">Identificador de alumno:</oj-label>
+        <oj-flex-item style="width: 100%;">
+          <oj-input-text id="num-alumno" value="{{idAlumno}}" virtual-keyboard="number">
+            <oj-button slot="end" display="icons" chroming="borderless" on-oj-action="[[buscarAlumno]]">
+              Buscar alumno
+              <span slot="endIcon" class="oj-ux-ico-content-item-search" role="img"></span>
+            </oj-button>
+          </oj-input-text>
+          <oj-toolbar style="width: 100%;" id='barra-herramientas' aria-label='Barra de herramientas' aria-controls='controlled'
+            class="oj-toolbar-bottom-border oj-sm-justify-content-space-around">
+            <oj-button id='agregar-alumno' display='icons' on-oj-action="[[abrirDialogoNuevoAlumno]]">
+              <span slot='startIcon' class='oj-ux-ico-contact-plus'></span>
+              Agregar alumno
+            </oj-button>
+            <oj-button id='editar-alumno' display='icons'>
+              <span slot='startIcon' class='oj-ux-ico-contact-edit'></span>
+              Editar alumno
+            </oj-button>
+          
+            <span role="separator" aria-orientation="vertical" class="oj-toolbar-separator"></span>
+          
+            <oj-button id='agregar-alumno' display='icons' on-oj-action="[[nuevaMedicion]]">
+              <span slot='startIcon' class='oj-ux-ico-add-create-page'></span>
+              Agregar medici&oacute;n
+            </oj-button>
+            <oj-button id='editar-alumno' display='icons'>
+              <span slot='startIcon' class='oj-ux-ico-add-edit-page'></span>
+              Editar medici&oacute;n
+            </oj-button>
+          
+            <span role="separator" aria-orientation="vertical" class="oj-toolbar-separator"></span>
+          
+            <oj-button id='editar-alumno' display='icons'>
+              <span slot='startIcon' class='oj-ux-ico-file-excel'></span>
+              Descargar informaci&oacute;n
+            </oj-button>
+          
+          </oj-toolbar>
+            <!--oj-button on-oj-action='[[obtenerMediciones]]'><span slot='endIcon'
               class="oj-fwk-icon oj-fwk-icon-magnifier"></span></oj-button>
           <oj-button>
-            <span slot="startIcon" class="demo-download-icon-24 demo-icon-font-24 oj-button-icon oj-start"></span>
-          </oj-button>
-          <oj-button on-oj-action="[[abrirDialogoNuevoAlumno]]"><span slot='endIcon' class="oj-fwk-icon oj-fwk-icon-plus"></span>
-          </oj-button>
+          -->
         </oj-flex-item>
         <oj-accordion id="acordeonDatos">
           <oj-collapsible id="datosAlumno" expanded>
-            <span slot="header">Datos Alumno</span>
-            <oj-list-view id="listview" aria-label="simple list" data="[[datosAlumno]]">
+            <span slot="header">Datos del alumno</span>
+            <oj-list-view id="listview" aria-label="simple list" data="[[datosAlumno]]" translations.msg-no-data="Sin datos">
               <template slot="itemTemplate" data-oj-as="item">
                 <div class="container">
                   <div>
@@ -52,7 +82,6 @@
           </oj-collapsible>
           <oj-collapsible id="medicionesAlumno">
             <span slot="header">Histórico mediciones</span>
-            <oj-button on-oj-action="[[nuevaMedicion]]">Agregar nueva medici&oacute;n</oj-button>
             <oj-accordion>
               <oj-collapsible id="medicion1" style="display: none;">
                 <span slot="header"><span id="tituloMedicion1"></span></span>
@@ -154,47 +183,100 @@
           <oj-collapsible id="graficasAlumno">
             <span slot="header">Gráficos de desarrollo</span>
             <oj-accordion>
-              <oj-collapsible id="primerMedicion">
-                <span slot="header">Peso</span>
-                <oj-chart id="lineChart" type="line" data="[[dataProvider]]" animation-on-display="auto"
-                  animation-on-data-change="auto" orientation="[[orientationValue]]" hover-behavior="dim"
-                  style="max-width:500px;width:100%;height:350px;display: inline-block;">
+              <oj-collapsible id="historico-imc">
+                <span slot="header">Evoluci&oacute;n IMC</span>
+                <oj-chart id="graficoIMC" type="line" data="[[datosIMC]]" animation-on-display="auto" animation-on-data-change="auto"
+                  translations.label-no-data="Sin datos" translations.label-series="Indicador" translations.label-group="Meses"
+                  translations.label-value="Valor" orientation="vertical" x-axis="[[tituloIMC]]" hover-behavior="dim"
+                  style="max-width:500px;width:100%;height:350px;display: inline-block;" style-defaults.line-type="curved"
+                  legend.rendered="off">
                   <template slot="itemTemplate" data-oj-as="item">
-                    <oj-chart-item value="[[item.data.valor]]" group-id="[[ [item.data.fecha] ]]"
-                      series-id="[[item.data.serie]]">
+                    <oj-chart-item value="[[item.data.valor]]" group-id="[[ [item.data.mes] ]]" series-id="[[item.data.serie]]">
                     </oj-chart-item>
                   </template>
                   <template slot="seriesTemplate" data-oj-as="series">
-                    <oj-chart-series color="[[series.id === 'ideal' ? '#006600': null]]" marker-shape="square"
-                      marker-displayed="on">
+                    <oj-chart-series color="[[series.id.includes('3') ? '#000000': 
+                                                      series.id.includes('2') ? '#990000': 
+                                                      series.id.includes('1') ? '#FF9933': 
+                                                      series.id.includes('0') ? '#006600':
+                                                      colorIndicador]]" marker-shape="[[series.id === 'imc' ? 'human': null]]"
+                      marker-size="[[series.id === 'imc' ? 10 : 0]]" marker-displayed="on" line-width="1">
                     </oj-chart-series>
                   </template>
                 </oj-chart>
-                <!-- vertical/horizontal toggle button -->
-                <demo-chart-orientation-control id="orientationControl" type="line" orientation="{{orientationValue}}"
-                  aria-controls="lineChart">
-                </demo-chart-orientation-control>
+              </oj-collapsible>
+              <oj-collapsible id="primerMedicion">
+                <span slot="header">Evoluci&oacute;n Talla</span>
+                <oj-chart id="graficoTalla" 
+                                  type="line" data="[[datosEstatura]]" 
+                                  animation-on-display="auto" 
+                                  legend.rendered="off"
+                                  animation-on-data-change="auto" 
+                                  x-axis="[[tituloTalla]]" 
+                                  orientation="vertical" 
+                                  hover-behavior="dim"
+                                  style="max-width:500px;width:100%;height:350px;display: inline-block;" 
+                                  style-defaults.line-type="curved" 
+                                  translations.label-no-data="Sin datos"
+                                  translations.label-series="Indicador"
+                                  translations.label-group="Meses"
+                                  translations.label-value="Valor">
+                            <template slot="itemTemplate" data-oj-as="item">
+                                <oj-chart-item value="[[item.data.valor]]" group-id="[[ [item.data.mes] ]]"
+                                    series-id="[[item.data.serie]]">
+                                </oj-chart-item>
+                            </template>
+                            <template slot="seriesTemplate" data-oj-as="series">
+                                <oj-chart-series 
+                                color="[[series.id.includes('3') ? '#000000': 
+                                        series.id.includes('2') ? '#990000': 
+                                        series.id.includes('1') ? '#FF9933': 
+                                        series.id.includes('0') ? '#006600':
+                                        colorIndicador]]"
+                                    marker-shape="[[series.id === 'talla' ? 'human': null]]"
+                                    marker-size="[[series.id === 'talla' ? 10 : 0]]"
+                                    marker-displayed="on"
+                                    line-width="1">
+                                </oj-chart-series>
+                            </template>
+                        </oj-chart>
               </oj-collapsible>
               <oj-collapsible id="segundaMedicion">
-                <span slot="header">Indice Z</span>
-                <oj-chart id="lineChart" type="line" data="[[datosEstatura]]" animation-on-display="auto"
-                  animation-on-data-change="auto" orientation="[[orientationValue]]" hover-behavior="dim"
-                  style="max-width:500px;width:100%;height:350px;display: inline-block;">
-                  <template slot="itemTemplate" data-oj-as="item">
-                    <oj-chart-item value="[[item.data.valor]]" group-id="[[ [item.data.fecha] ]]"
-                      series-id="[[item.data.serie]]">
-                    </oj-chart-item>
-                  </template>
-                  <template slot="seriesTemplate" data-oj-as="series">
-                    <oj-chart-series color="[[series.id === 'ideal' ? '#006600': null]]" marker-shape="square"
-                      marker-displayed="on">
-                    </oj-chart-series>
-                  </template>
-                </oj-chart>
-                <!-- vertical/horizontal toggle button -->
-                <demo-chart-orientation-control id="orientationControl" type="line" orientation="{{orientationValue}}"
-                  aria-controls="lineChart">
-                </demo-chart-orientation-control>
+                <span slot="header">Evoluci&oacute;n Peso</span>
+                <oj-chart id="graficoPeso" 
+                                  type="line" 
+                                  data="[[datosPeso]]" 
+                                  animation-on-display="auto" 
+                                  legend.rendered="off"
+                                  animation-on-data-change="auto" 
+                                  x-axis="[[tituloPeso]]" 
+                                  orientation="vertical" 
+                                  hover-behavior="dim"
+                                  style="max-width:500px;width:100%;height:350px;display: inline-block;" 
+                                  style-defaults.line-type="curved" 
+                                  translations.label-no-data="Sin datos"
+                                  translations.label-series="Indicador"
+                                  translations.label-group="Meses"
+                                  translations.label-value="Valor">
+                            <template slot="itemTemplate" data-oj-as="item">
+                                <oj-chart-item value="[[item.data.valor]]" group-id="[[ [item.data.mes] ]]"
+                                    series-id="[[item.data.serie]]">
+                                </oj-chart-item>
+                            </template>
+                            <template slot="seriesTemplate" data-oj-as="series">
+                                <oj-chart-series 
+                                color="[[series.id.includes('3') ? '#000000': 
+                                        series.id.includes('2') ? '#990000': 
+                                        series.id.includes('1') ? '#FF9933': 
+                                        series.id.includes('0') ? '#006600':
+                                        colorIndicador]]"
+                                    marker-shape="[[series.id === 'peso' ? 'human': null]]"
+                                    marker-size="[[series.id === 'peso' ? 10 : 0]]"
+                                    marker-displayed="on"
+                                    line-width="1">
+                                </oj-chart-series>
+                            </template>
+                        </oj-chart>
               </oj-collapsible>
             </oj-accordion>
           </oj-collapsible>
@@ -206,10 +288,17 @@
 <oj-dialog style="display:none;width: 100%;" id="dialogoBuscarAlumno" dialog-title="Encontrar alumno por nombre:">
   <div slot="body">
     <div class="oj-form-layout">
-      <oj-input-text style="width: 245px;" id="nombreABuscar" required></oj-input-text>
-      <oj-button id="buscarXNombre" on-oj-action="[[encontrarAlumno]]">Buscar</oj-button>
+      <oj-label for="nombreABuscar" style="display: none;"></oj-label>
+      <oj-input-text style="width: 100%;" id="nombreABuscar" required>
+        <oj-button slot="end" display="icons" chroming="borderless" on-oj-action="[[encontrarAlumno]]">
+          Buscar
+          <span slot="endIcon" class="oj-ux-ico-search" role="img"></span>
+        </oj-button>
+      </oj-input-text>
+      <br/>
+      <br/>
       <oj-list-view selection-mode="single" id="busquedaNombres" aria-label="simple list" data="[[origenDatosNombres]]"
-        selection="{{alumnoSeleccionado}}">
+        selected="{{alumnoSeleccionado}}">
         <template slot="itemTemplate" data-oj-as="item">
           <div class="container">
             <div>
@@ -219,7 +308,9 @@
             </div>
             <div>
               <span class="oj-text-xs oj-text-secondary-color">
-                <oj-bind-text value="[[item.data.nombre_escuela]]"></oj-bind-text>
+                ESCUELA <oj-bind-text value="[[item.data.nombre_escuela]]"></oj-bind-text>
+                <br/>
+                GRUPO <oj-bind-text value="[[item.data.grupo]]"></oj-bind-text>
               </span>
             </div>
           </div>
@@ -235,8 +326,8 @@
 <oj-dialog style="display:none" id="dialogoCargando" cancel-behavior="none" dialog-title="Agregando datos...">
   <div slot="body">
     <p>Cargando la informaci&oacute;n espere...</p>
-    <oj-progress class="oj-progress-bar-embedded" id="progressbar" value="-1" />
-    <p />
+    <oj-progress class="oj-progress-bar-embedded" id="progressbar" value="-1"></oj-progress>
+    <p></p>
   </div>
 </oj-dialog>
 <oj-dialog style="display:none" id="dialogoNuevoAlumno" dialog-title="Agregar nuevo alumno">
@@ -244,47 +335,35 @@
     <div class="oj-form-layout">
       <div class="oj-form">
         <div class="oj-flex">
-          <oj-flex-item>
-            <oj-label-inline for="nuevoIdAlumno">N&uacute;mero:</oj-label-inline>
-            <oj-input-text id="nuevoIdAlumno" required></oj-input-text>
-            <oj-label-inline for="nuevoNombreAlumno">Nombre(s):</oj-label-inline>
-            <oj-input-text id="nuevoNombreAlumno" required></oj-input-text>
-            <oj-label-inline for="nuevoApellidoPAlumno">Apellido Paterno:</oj-label-inline>
-            <oj-input-text id="nuevoApellidoPAlumno" required></oj-input-text>
-            <oj-label-inline for="nuevoApellidoMAlumno">Apellido Materno:</oj-label-inline>
-            <oj-input-text id="nuevoApellidoMAlumno" required></oj-input-text>
-            <oj-label-inline for="nuevoSexoAlumno">Sexo:</oj-label-inline>
-            <oj-select-one id="nuevoSexoAlumno" value="{{nuevoSexoAlumno}}" required>
-              <oj-option value="Femenino">Femenino</oj-option>
-              <oj-option value="Masculino">Masculino</oj-option>
-            </oj-select-one>
-            <oj-label-inline for="nuevoFNacimientoAlumno">Fecha nacimiento:</oj-label-inline>
-            <oj-input-date id="nuevoFNacimientoAlumno"></oj-input-date>
-            <oj-label-inline for="nuevoEscuelaAlumno">Escuela:</oj-label-inline>
-            <oj-select-one id="nuevoEscuelaAlumno" options="[[origenDatosEscuelas]]" value="{{nuevoEscuelaAlumno}}"
-              required>
-            </oj-select-one>
-            <oj-label-inline for="nuevoGradoAlumno">Grado:</oj-label-inline>
-            <oj-select-one id="nuevoGradoAlumno" value="{{nuevoGradoAlumno}}" required>
-              <oj-option value="1">1er Grado</oj-option>
-              <oj-option value="2">2do Grado</oj-option>
-              <oj-option value="3">3er Grado</oj-option>
-              <oj-option value="4">4to Grado</oj-option>
-              <oj-option value="5">5to Grado</oj-option>
-              <oj-option value="6">6to Grado</oj-option>
-            </oj-select-one>
-            <oj-label-inline for="nuevoGrupoAlumno">Grupo:</oj-label-inline>
-            <oj-select-one id="nuevoGrupoAlumno" value="{{nuevoGrupoAlumno}}" required>
-              <oj-option value="1">Grupo A</oj-option>
-              <oj-option value="2">Grupo B</oj-option>
-              <oj-option value="3">Grupo C</oj-option>
-            </oj-select-one>
+          <oj-flex-item style="width: 100%;">
+            <oj-label for="nuevoIdAlumno" show-required>Identificador:</oj-label>
+            <oj-input-text class="campo" id="nuevoIdAlumno" required></oj-input-text>
+            <oj-label for="nuevoNombreAlumno" show-required>Nombre(s):</oj-label>
+            <oj-input-text class="campo" id="nuevoNombreAlumno" required></oj-input-text>
+            <oj-label for="nuevoApellidoPAlumno" show-required>Apellido Paterno:</oj-label>
+            <oj-input-text class="campo" id="nuevoApellidoPAlumno" required></oj-input-text>
+            <oj-label for="nuevoApellidoMAlumno" show-required>Apellido Materno:</oj-label>
+            <oj-input-text class="campo" id="nuevoApellidoMAlumno" required></oj-input-text>
+            <oj-label for="nuevoSexoAlumno" show-required>Sexo:</oj-label>
+            <oj-select-single class="campo" id="nuevoSexoAlumno" value="{{nuevoSexoAlumno}}" required>
+              <oj-option value="femenino">FEMENINO</oj-option>
+              <oj-option value="masculino">MASCULINO</oj-option>
+            </oj-select-single>
+            <oj-label for="nuevoFNacimientoAlumno" show-required>Fecha nacimiento:</oj-label>
+            <oj-input-date class="campo" id="nuevoFNacimientoAlumno"required></oj-input-date>
+            <oj-label for="nuevoEscuelaAlumno" show-required>Escuela:</oj-label>
+            <oj-select-single class="campo" id="nuevoEscuelaAlumno" options="[[origenDatosEscuelas]]" value="{{nuevoEscuelaAlumno}}"
+              on-value-changed="[[escuelaSeleccionada]]" required>
+            </oj-select-single>
+            <oj-label for="nuevoGrupoMedicion" show-required>Grupo:</oj-label>
+            <oj-select-single class="campo" id="nuevoGrupoMedicion" options="[[origenDatosGrupos]]" value="{{nuevoGrupoAlumno}}" required>
+            </oj-select-single>
           </oj-flex-item>
         </div>
       </div>
     </div>
   </div>
-  <div slot="footer">
+  <div style="padding-top: 0;" slot="footer">
     <oj-button id="botonAgregarAlumno" on-oj-action="[[cancelarNuevoAlumno]]">Cancelar</oj-button>
     <oj-button id="botonAgregarAlumno" on-oj-action="[[crearNuevoAlumno]]">Agregar</oj-button>
   </div>
@@ -295,21 +374,21 @@
       <div class="oj-form">
         <div class="oj-flex">
           <oj-flex-item>
-            <oj-label-inline for="nuevaFMedicion">Fecha medicion:</oj-label-inline>
+            <oj-label for="nuevaFMedicion">Fecha medicion:</oj-label>
             <oj-input-date required="true" id="nuevaFMedicion"></oj-input-date>
-            <oj-label-inline for="nuevaMasaMedicion">Masa:</oj-label-inline>
+            <oj-label for="nuevaMasaMedicion">Masa:</oj-label>
             <oj-input-text required="true" id="nuevaMasaMedicion" required></oj-input-text>
-            <oj-label-inline for="nuevaEstaturaMedicion">Estatura:</oj-label-inline>
+            <oj-label for="nuevaEstaturaMedicion">Estatura:</oj-label>
             <oj-input-text required="true" id="nuevaEstaturaMedicion" required></oj-input-text>
-            <oj-label-inline for="nuevaPerimetroCuelloMedicion">Perimetro del Cuello:</oj-label-inline>
+            <oj-label for="nuevaPerimetroCuelloMedicion">Perimetro del Cuello:</oj-label>
             <oj-input-text id="nuevaPerimetroCuelloMedicion" required></oj-input-text>
-            <oj-label-inline for="nuevaCinturaMedicion">Cintura:</oj-label-inline>
+            <oj-label for="nuevaCinturaMedicion">Cintura:</oj-label>
             <oj-input-text id="nuevaCinturaMedicion" required></oj-input-text>
-            <oj-label-inline for="nuevaTricepsMedicion">Triceps:</oj-label-inline>
+            <oj-label for="nuevaTricepsMedicion">Triceps:</oj-label>
             <oj-input-text id="nuevaTricepsMedicion" required></oj-input-text>
-            <oj-label-inline for="nuevaSubescapulaMedicion">Subescapula:</oj-label-inline>
+            <oj-label for="nuevaSubescapulaMedicion">Subescapula:</oj-label>
             <oj-input-text id="nuevaSubescapulaMedicion" required></oj-input-text>
-            <oj-label-inline for="nuevaPliegueCuelloMedicion">Pliegue del cuello:</oj-label-inline>
+            <oj-label for="nuevaPliegueCuelloMedicion">Pliegue del cuello:</oj-label>
             <oj-input-text id="nuevaPliegueCuelloMedicion" required></oj-input-text>
           </oj-flex-item>
         </div>

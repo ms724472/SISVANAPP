@@ -43,7 +43,7 @@ define(['ojs/ojcore', 'knockout', 'appController', 'ojs/ojmodule-element-utils',
           }
         }
       }).fail(function () {
-        alert("Error en el servidor, favor de comunicarse con el administrador.");
+        //alert("Error en el servidor, favor de comunicarse con el administrador.");
         return;
       });
 
@@ -64,7 +64,7 @@ define(['ojs/ojcore', 'knockout', 'appController', 'ojs/ojmodule-element-utils',
             }
           }
         }).fail(function () {
-          alert("Error en el servidor, favor de comunicarse con el administrador.");
+          //alert("Error en el servidor, favor de comunicarse con el administrador.");
           return;
         });
       };
@@ -87,8 +87,7 @@ define(['ojs/ojcore', 'knockout', 'appController', 'ojs/ojmodule-element-utils',
           }
         }
       }).fail(function (data, xhr) {
-        console.log(data);
-        alert("Error en el servidor, favor de comunicarse con el administrador.");
+        //alert("Error en el servidor, favor de comunicarse con el administrador.");
         return;
       });
 
@@ -108,7 +107,7 @@ define(['ojs/ojcore', 'knockout', 'appController', 'ojs/ojmodule-element-utils',
           }
         }
       }).fail(function () {
-        alert("Error en el servidor, favor de comunicarse con el administrador.");
+        //alert("Error en el servidor, favor de comunicarse con el administrador.");
         return;
       });
 
@@ -128,7 +127,7 @@ define(['ojs/ojcore', 'knockout', 'appController', 'ojs/ojmodule-element-utils',
           }
         }
       }).fail(function () {
-        alert("Error en el servidor, favor de comunicarse con el administrador.");
+        //alert("Error en el servidor, favor de comunicarse con el administrador.");
         return;
       });
 
@@ -148,7 +147,7 @@ define(['ojs/ojcore', 'knockout', 'appController', 'ojs/ojmodule-element-utils',
           }
         }
       }).fail(function () {
-        alert("Error en el servidor, favor de comunicarse con el administrador.");
+        //alert("Error en el servidor, favor de comunicarse con el administrador.");
         return;
       });
 
@@ -168,7 +167,7 @@ define(['ojs/ojcore', 'knockout', 'appController', 'ojs/ojmodule-element-utils',
           }
         }
       }).fail(function () {
-        alert("Error en el servidor, favor de comunicarse con el administrador.");
+        //alert("Error en el servidor, favor de comunicarse con el administrador.");
         return;
       });
 
@@ -188,7 +187,7 @@ define(['ojs/ojcore', 'knockout', 'appController', 'ojs/ojmodule-element-utils',
           }
         }
       }).fail(function () {
-        alert("Error en el servidor, favor de comunicarse con el administrador.");
+        //alert("Error en el servidor, favor de comunicarse con el administrador.");
         return;
       });
 
@@ -316,7 +315,7 @@ define(['ojs/ojcore', 'knockout', 'appController', 'ojs/ojmodule-element-utils',
             }
           }
         }).fail(function () {
-          alert("Error en el servidor, favor de comunicarse con el administrador.");
+          //alert("Error en el servidor, favor de comunicarse con el administrador.");
           return;
         });
       };

@@ -4,15 +4,41 @@
  * The Universal Permissive License (UPL), Version 1.0
  * @ignore
  */
+
 /*
  * Your application specific code will go here
  */
-define(['knockout', 'ojs/ojrouter', 'ojs/ojthemeutils', 'ojs/ojmodule-element-utils', 'ojs/ojmoduleanimations', 'ojs/ojarraydataprovider', 'ojs/ojknockouttemplateutils', 'ojs/ojknockout', 'ojs/ojmodule-element'],
-  function(ko, Router, ThemeUtils, moduleUtils, ModuleAnimations, ArrayDataProvider, KnockoutTemplateUtils) {
+define(['knockout', 'ojs/ojcore', 'ojs/ojrouter', 'ojs/ojthemeutils', 'ojs/ojmodule-element-utils', 'ojs/ojmoduleanimations', 'ojs/ojarraydataprovider', 'ojs/ojknockouttemplateutils', 'ojs/ojknockout', 'ojs/ojmodule-element'],
+  function(ko, oj, Router, ThemeUtils, moduleUtils, ModuleAnimations, ArrayDataProvider, KnockoutTemplateUtils) {
      function ControllerViewModel() {
       var self = this;
+      oj.gOfflineMode = ko.observable(false);
+      oj.gWSUrl = ko.observable("https://sve-nace.freeddns.org/SISVANWS/rest/wls/1.0/");
 
       self.KnockoutTemplateUtils = KnockoutTemplateUtils;
+
+      function querySuccess(tx, results) {
+        var len = results.rows.length;
+        for (var i = 0; i < len; i++) {
+          console.log(results.rows.item(i).cuentaPeso);
+        }
+      }
+
+      function errorCB(err) {
+        console.log("Error processing SQL: " + err.code);
+      }
+
+      var db = null;
+      document.addEventListener("deviceready", function(){
+          db = window.sqlitePlugin.openDatabase({name: "sve-base-datos.db", location: 'default', createFromLocation: 1});          
+          db.transaction(function(tx) {
+            tx.executeSql("SELECT COUNT(*) as cuentaPeso from percentiles_oms_peso",
+            [], querySuccess, errorCB);
+              //tx.executeSql("CREATE TABLE IF NOT EXISTS TEST (name text primary key)");              
+          }, function(err){
+              alert("An error occurred while initializing the app");
+          });
+      }, false);
 
       // Handle announcements sent when pages change, for Accessibility.
       self.manner = ko.observable('polite');
@@ -36,7 +62,7 @@ define(['knockout', 'ojs/ojrouter', 'ojs/ojthemeutils', 'ojs/ojmodule-element-ut
       self.router.configure({
        'evalGrup': {label: 'Evaluaciones grupales', isDefault: true},
        'evalIndv': {label: 'Evaluación individual'},
-       'estUtils': {label: 'Estadisticas útiles'},
+       'estUtils': {label: 'Estadísticas OMS'},
        'datEsc': {label: 'Datos escolares'}
       });
 
@@ -63,9 +89,9 @@ define(['knockout', 'ojs/ojrouter', 'ojs/ojthemeutils', 'ojs/ojmodule-element-ut
       var navData = [
       {name: 'Grupales', id: 'evalGrup',
        iconClass: 'oj-navigationlist-item-icon demo-icon-font-24 demo-people-icon-24'},
-      {name: 'Individual', id: 'evalIndv',
+      {name: 'Individuales', id: 'evalIndv',
        iconClass: 'oj-navigationlist-item-icon demo-icon-font-24 demo-person-icon-24'},
-      {name: 'Estadisticas', id: 'estUtils',
+      {name: 'Estadísticas', id: 'estUtils',
        iconClass: 'oj-navigationlist-item-icon demo-icon-font-24 demo-chart-icon-24'},
       {name: 'Escolares', id: 'datEsc',
        iconClass: 'oj-navigationlist-item-icon demo-icon-font-24 demo-library-icon-24'}

@@ -26,6 +26,28 @@
   background-color: #ccc6ad !important;
 }
 
+.oj-required-inline-container,.oj-user-assistance-inline-container {
+  display: none !important;
+}
+
+.oj-navigationlist-item-element {
+  margin-right: unset !important;
+}
+
+.oj-navigationlist-item-icon {
+  padding-top: 5px;
+}
+
+.campo {
+  padding-bottom: 10px;
+  width: 100%;
+}
+
+#dialogoNuevoAlumno {
+  width: 95%;
+  max-width: none;
+}
+
 #header-icon{
   display: flex;
   height: 30px;  
