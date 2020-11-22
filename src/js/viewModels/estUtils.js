@@ -12,7 +12,7 @@ define(['knockout', 'appController', 'ojs/ojmodule-element-utils', 'accUtils',
 'ojs/ojcollapsible', 'ojs/ojchart', 'ojs/ojaccordion', 'ojs/ojselectcombobox'],
   function (ko, app, moduleUtils, accUtils, ArrayDataProvider) {
 
-    function CustomerViewModel() {
+    function ModeloEstadisticasOMS() {
       var self = this;
       var db = null;
       var tipos = [
@@ -136,6 +136,6 @@ define(['knockout', 'appController', 'ojs/ojmodule-element-utils', 'accUtils',
      * return a constructor for the ViewModel so that the ViewModel is constructed
      * each time the view is displayed.
      */
-    return CustomerViewModel;
+    return ModeloEstadisticasOMS;
   }
 );

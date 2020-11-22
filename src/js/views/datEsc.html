@@ -23,7 +23,7 @@
             <oj-label>Agrega o selecciona una escuela:</oj-label>
             <oj-toolbar style="width: 100%;" id='barra-herramientas' aria-label='Barra de herramientas' aria-controls='controlled'
               class="oj-toolbar-bottom-border oj-sm-justify-content-space-around">
-              <oj-button id='agregar-alumno' display='icons'>
+              <oj-button id='agregar-alumno' display='icons' on-oj-action="[[crearNuevaEscuela]]">
                 <span slot='startIcon' class='oj-ux-ico-add-create-page'></span>
                 Agregar escuela
               </oj-button>
@@ -40,3 +40,60 @@
     </div>
   </div>
 </div>
+<oj-dialog style="display:none;width: 100%;max-width: unset;" id="dialogo-nueva-escuela" dialog-title="Agregar nueva escuela">
+  <div id="cuperpo-dialogo-escuela" slot="body">
+    <div class="oj-form-layout">
+      <div class="oj-form">
+        <div class="oj-flex">
+          <oj-flex-item style="width: 100%;">
+            <oj-label for="campo-cct" show-required>Clave de escuela:</oj-label>
+            <oj-input-text class="campo" id="campo-cct" required></oj-input-text>
+            <oj-label for="campo-nombre" show-required>Nombre:</oj-label>
+            <oj-input-text class="campo" id="campo-nombre" required></oj-input-text>
+            <oj-label for="campo-direccion" show-required>Direcci&oacute;n:</oj-label>
+            <oj-input-text class="campo" id="campo-direccion" required></oj-input-text>
+            <oj-label for="campo-colonia" show-required>Colonia:</oj-label>
+            <oj-input-text class="campo" id="campo-colonia" required></oj-input-text>
+            <oj-label for="campo-codigo-postal" show-required>C&oacute;digo Postal:</oj-label>
+            <oj-input-text class="campo" id="campo-codigo-postal" required></oj-input-text>
+            <oj-label for="campo-telefono" show-required>Tel&eacute;fono:</oj-label>
+            <oj-input-text class="campo" id="campo-telefono" required></oj-input-text>
+            <oj-label for="campo-estado" show-required>Estado:</oj-label>
+            <oj-select-one class="campo" id="campo-estado" options="[[datosEstados]]" on-value-changed="[[estadoSeleccionado]]" required>
+            </oj-select-one>            
+            <oj-label for="campo-municipio" show-required>Municipio:</oj-label>
+            <oj-select-one class="campo" id="campo-municipio" options="[[datosMunicipios]]" required>
+            </oj-select-one>
+          </oj-flex-item>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style="padding-top: 0;" slot="footer">
+    <oj-button id="boton-cancelar-escuela" on-oj-action="[[cerrarDialogoEscuela]]">Cancelar</oj-button>
+    <oj-button id="boton-agregar-escuela">Agregar</oj-button>
+  </div>
+</oj-dialog>
+<oj-dialog style="display:none;width: 100%;max-width: unset;" id="dialogo-nuevo-grupo" dialog-title="Agregar nuevo grupo">
+  <div id="cuperpo-dialogo-grupo" slot="body">
+    <div class="oj-form-layout">
+      <div class="oj-form">
+        <div class="oj-flex">
+          <oj-flex-item style="width: 100%;">
+            <oj-label for="fecha-toma">Fecha toma en campo:</oj-label>
+            <oj-input-date id="fecha-toma" class="campo"></oj-input-date>
+            <oj-label for="campo-grado"  show-required>Grado:</oj-label>                       
+            <oj-select-one id="campo-grado" class="campo" options="[[datosGrados]]" required>
+            </oj-select-one>
+            <oj-label for="campo-letra" show-required>Letra:</oj-label>
+            <oj-input-text id="campo-letra" class="campo"></oj-input-text>
+          </oj-flex-item>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style="padding-top: 0;" slot="footer">
+    <oj-button id="boton-cancelar-escuela" on-oj-action="[[cerrarDialogoGrupo]]">Cancelar</oj-button>
+    <oj-button id="boton-agregar-escuela">Agregar</oj-button>
+  </div>
+</oj-dialog>

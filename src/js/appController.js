@@ -60,7 +60,7 @@ define(['knockout', 'ojs/ojcore', 'ojs/ojrouter', 'ojs/ojthemeutils', 'ojs/ojmod
       self.router = Router.rootInstance;
 
       self.router.configure({
-       'evalGrup': {label: 'Evaluaciones grupales', isDefault: true},
+       'evalGrup': {label: 'Evaluaciones colectivas', isDefault: true},
        'evalIndv': {label: 'Evaluación individual'},
        'estUtils': {label: 'Estadísticas OMS'},
        'datEsc': {label: 'Datos escolares'}
@@ -87,7 +87,7 @@ define(['knockout', 'ojs/ojcore', 'ojs/ojrouter', 'ojs/ojthemeutils', 'ojs/ojmod
 
       // Navigation setup
       var navData = [
-      {name: 'Grupales', id: 'evalGrup',
+      {name: 'Colectivas', id: 'evalGrup',
        iconClass: 'oj-navigationlist-item-icon demo-icon-font-24 demo-people-icon-24'},
       {name: 'Individuales', id: 'evalIndv',
        iconClass: 'oj-navigationlist-item-icon demo-icon-font-24 demo-person-icon-24'},

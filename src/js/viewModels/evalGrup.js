@@ -11,7 +11,7 @@ define(['ojs/ojcore', 'knockout', 'appController', 'ojs/ojmodule-element-utils',
   'ojs/ojarraydataprovider', 'ojs/ojchart', 'ojs/ojswitcher'],
   function (oj, ko, app, moduleUtils, accUtils) {
 
-    function EvaluacionesGrupalesVistaModelo() {
+    function ModeloEvaluacionesGrupales() {
       var self = this;
       self.origenDatosEscuelas = ko.observable();
       self.escuelaSeleccionada = ko.observable();
@@ -328,6 +328,6 @@ define(['ojs/ojcore', 'knockout', 'appController', 'ojs/ojmodule-element-utils',
      * return a constructor for the ViewModel so that the ViewModel is constructed
      * each time the view is displayed.
      */
-    return EvaluacionesGrupalesVistaModelo;
+    return ModeloEvaluacionesGrupales;
   }
 );

@@ -7,13 +7,162 @@
 /*
  * Your profile ViewModel code goes here
  */
-define(['knockout', 'jquery', 'appController', 'ojs/ojmodule-element-utils', 'accUtils', 'ojs/ojaccordion',
-  'ojs/ojbutton', 'ojs/ojlistview', 'ojs/ojlistitemlayout', 'ojs/ojtoolbar'],
-  function (ko, $, app, moduleUtils, accUtils) {
+define(['knockout', 'jquery', 'appController', 'ojs/ojmodule-element-utils', 'accUtils', 'ojs/ojarraydataprovider', 'ojs/ojaccordion',
+  'ojs/ojbutton', 'ojs/ojlistview', 'ojs/ojlistitemlayout', 'ojs/ojtoolbar', 'ojs/ojdialog', 'ojs/ojinputtext', 
+  'ojs/ojselectcombobox', 'ojs/ojdatetimepicker'],
+  function (ko, $, app, moduleUtils, accUtils, ArrayDataProvider) {
 
     function ModeloDatosEscolares() {
       var self = this;
-      var todosLosGrupos;
+      self.datosMunicipios = ko.observableArray();
+      
+      self.grados = [
+        { value: 1 },
+        { value: 2 },
+        { value: 3 },
+        { value: 4 },
+        { value: 5 },
+        { value: 6 }
+      ];
+
+      self.estados = [
+        { value: 'JALISCO' }
+      ];
+
+      self.datosEstados = new ArrayDataProvider(self.estados, { keyAttributes: 'value' });
+
+      self.municipios = {
+        JALISCO: [
+          { value: 'ACATIC' },
+          { value: 'ACATLAN DE JUAREZ' },
+          { value: 'AHUALULCO DE MERCADO' },
+          { value: 'AMACUECA' },
+          { value: 'AMATITAN' },
+          { value: 'AMECA' },
+          { value: 'ARANDAS' },
+          { value: 'ATEMAJAC DE BRIZUELA' },
+          { value: 'ATENGO' },
+          { value: 'ATENGUILLO' },
+          { value: 'ATOTONILCO EL ALTO' },
+          { value: 'ATOYAC' },
+          { value: 'AUTLAN DE NAVARRO' },
+          { value: 'AYOTLAN' },
+          { value: 'AYUTLA' },
+          { value: 'BOLAÑOS' },
+          { value: 'CABO CORRIENTES' },
+          { value: 'CAÑADAS DE OBREGON' },
+          { value: 'CASIMIRO CASTILLO' },
+          { value: 'CHAPALA' },
+          { value: 'CHIMALTITAN' },
+          { value: 'CHIQUILISTLAN' },
+          { value: 'CIHUATLAN' },
+          { value: 'COCULA' },
+          { value: 'COLOTLAN' },
+          { value: 'CONCEPCION DE BUENOS AIRES' },
+          { value: 'CUAUTITLAN DE GARCIA BARRAGAN' },
+          { value: 'CUAUTLA' },
+          { value: 'CUQUIO' },
+          { value: 'DEGOLLADO' },
+          { value: 'EJUTLA' },
+          { value: 'EL ARENAL' },
+          { value: 'EL GRULLO' },
+          { value: 'EL LIMON' },
+          { value: 'EL SALTO' },
+          { value: 'ENCARNACION DE DIAZ' },
+          { value: 'ETZATLAN' },
+          { value: 'GOMEZ FARIAS' },
+          { value: 'GUACHINANGO' },
+          { value: 'GUADALAJARA' },
+          { value: 'HOSTOTIPAQUILLO' },
+          { value: 'HUEJUCAR' },
+          { value: 'HUEJUQUILLA EL ALTO' },
+          { value: 'IXTLAHUACAN DE LOS MEMBRILLOS' },
+          { value: 'IXTLAHUACAN DEL RIO' },
+          { value: 'JALOSTOTITLAN' },
+          { value: 'JAMAY' },
+          { value: 'JESUS MARIA' },
+          { value: 'JILOTLAN DE LOS DOLORES' },
+          { value: 'JOCOTEPEC' },
+          { value: 'JUANACATLAN' },
+          { value: 'JUCHITLAN' },
+          { value: 'LA BARCA' },
+          { value: 'LA HUERTA' },
+          { value: 'LA MANZANILLA DE LA PAZ' },
+          { value: 'LAGOS DE MORENO' },
+          { value: 'MAGDALENA' },
+          { value: 'MASCOTA' },
+          { value: 'MAZAMITLA' },
+          { value: 'MEXTICACAN' },
+          { value: 'MEZQUITIC' },
+          { value: 'MIXTLAN' },
+          { value: 'OCOTLAN' },
+          { value: 'OJUELOS DE JALISCO' },
+          { value: 'PIHUAMO' },
+          { value: 'PONCITLAN' },
+          { value: 'PUERTO VALLARTA' },
+          { value: 'QUITUPAN' },
+          { value: 'SAN CRISTOBAL DE LA BARRANCA' },
+          { value: 'SAN DIEGO DE ALEJANDRIA' },
+          { value: 'SAN GABRIEL' },
+          { value: 'SAN IGNACIO CERRO GORDO' },
+          { value: 'SAN JUAN DE LOS LAGOS' },
+          { value: 'SAN JUANITO DE ESCOBEDO' },
+          { value: 'SAN JULIAN' },
+          { value: 'SAN MARCOS' },
+          { value: 'SAN MARTIN DE BOLAÑOS' },
+          { value: 'SAN MARTIN DE HIDALGO' },
+          { value: 'SAN MIGUEL EL ALTO' },
+          { value: 'SAN SEBASTIAN DEL OESTE' },
+          { value: 'SANTA MARIA DE LOS ANGELES' },
+          { value: 'SANTA MARIA DEL ORO' },
+          { value: 'SAYULA' },
+          { value: 'TALA' },
+          { value: 'TALPA DE ALLENDE' },
+          { value: 'TAMAZULA DE GORDIANO' },
+          { value: 'TAPALPA' },
+          { value: 'TECALITLAN' },
+          { value: 'TECOLOTLAN' },
+          { value: 'TECHALUTA DE MONTENEGRO' },
+          { value: 'TENAMAXTLAN' },
+          { value: 'TEOCALTICHE' },
+          { value: 'TEOCUITATLAN DE CORONA' },
+          { value: 'TEPATITLAN DE MORELOS' },
+          { value: 'TEQUILA' },
+          { value: 'TEUCHITLAN' },
+          { value: 'TIZAPAN EL ALTO' },
+          { value: 'TLAJOMULCO DE ZUÑIGA' },
+          { value: 'TLAQUEPAQUE' },
+          { value: 'TOLIMAN' },
+          { value: 'TOMATLAN' },
+          { value: 'TONALA' },
+          { value: 'TONAYA' },
+          { value: 'TONILA' },
+          { value: 'TOTATICHE' },
+          { value: 'TOTOTLAN' },
+          { value: 'TUXCACUESCO' },
+          { value: 'TUXCUECA' },
+          { value: 'TUXPAN' },
+          { value: 'UNION DE SAN ANTONIO' },
+          { value: 'UNION DE TULA' },
+          { value: 'VALLE DE GUADALUPE' },
+          { value: 'VALLE DE JUAREZ' },
+          { value: 'VILLA PURIFICACION' },
+          { value: 'VILLA CORONA' },
+          { value: 'VILLA GUERRERO' },
+          { value: 'VILLA HIDALGO' },
+          { value: 'YAHUALICA DE GONZALEZ GALLO' },
+          { value: 'ZACOALCO DE TORRES' },
+          { value: 'ZAPOPAN' },
+          { value: 'ZAPOTILTIC' },
+          { value: 'ZAPOTITLAN DE VADILLO' },
+          { value: 'ZAPOTLAN DEL REY' },
+          { value: 'ZAPOTLAN EL GRANDE' },
+          { value: 'ZAPOTLANEJO' }
+        ]
+      };
+
+      self.datosGrados = new ArrayDataProvider(self.grados, { keyAttributes: 'value' });
+
       var diccionario = {
         clave_sep: "Clave CCT",
         direccion: "Dirección",
@@ -27,7 +176,14 @@ define(['knockout', 'jquery', 'appController', 'ojs/ojmodule-element-utils', 'ac
       self.headerConfig = ko.observable({ 'view': [], 'viewModel': null });
       moduleUtils.createView({ 'viewPath': 'views/header.html' }).then(function (view) {
         self.headerConfig({ 'view': view, 'viewModel': new app.getHeaderModel() })
-      })
+      });
+
+      self.estadoSeleccionado = function (event) {
+        var estado = event['detail'].value;
+        if (estado !== "" && self.municipios.hasOwnProperty(estado) && Object.keys(self.municipios[estado]).length > 0) {
+          self.datosMunicipios(new ArrayDataProvider(self.municipios[estado], { keyAttributes: 'value' }));
+        }
+      };
 
       self.obtenerGrupos = function (idEscuela) {
         var respuesta;
@@ -47,6 +203,22 @@ define(['knockout', 'jquery', 'appController', 'ojs/ojmodule-element-utils', 'ac
         };
         peticionDatosGrupos.send();
         return respuesta;
+      };
+
+      self.crearNuevaEscuela = function() {
+        document.getElementById("dialogo-nueva-escuela").open();
+      };
+
+      self.cerrarDialogoEscuela= function() {
+        document.getElementById("dialogo-nueva-escuela").close();
+      };
+
+      self.crearNuevoGrupo = function() {
+        document.getElementById("dialogo-nuevo-grupo").open();
+      };
+
+      self.cerrarDialogoGrupo= function() {
+        document.getElementById("dialogo-nuevo-grupo").close();
       };
 
       self.procesarDatosEscolares = function (json) {
@@ -70,6 +242,7 @@ define(['knockout', 'jquery', 'appController', 'ojs/ojmodule-element-utils', 'ac
 
           var botonAgregarGrupo = document.createElement("oj-button");
           botonAgregarGrupo.setAttribute("display", "icons");
+          botonAgregarGrupo.setAttribute("on-oj-action", "[[crearNuevoGrupo]]");
           var iconoBotonAGrupo = document.createElement("span");
           iconoBotonAGrupo.setAttribute("slot", "startIcon");
           iconoBotonAGrupo.classList.add("oj-ux-ico-add-create-page");
@@ -93,7 +266,6 @@ define(['knockout', 'jquery', 'appController', 'ojs/ojmodule-element-utils', 'ac
           Object.entries(escuela).forEach(([nCampo, nValor]) => {
             if (nCampo === "id_escuela") {
               var arregloGrupos = self.obtenerGrupos(nValor);
-              console.log(arregloGrupos);
               Object.entries(arregloGrupos).forEach(([nCampo, nValor]) => {
                 if (nCampo === "id_grupo") {
                   return;

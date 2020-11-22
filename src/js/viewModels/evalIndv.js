@@ -9,19 +9,14 @@
  */
 define(['knockout', 'ojs/ojcore', 'appController', 'ojs/ojmodule-element-utils', 'accUtils', 'ojs/ojlistview', 'ojs/ojtable', 'ojs/ojselectcombobox',
   'ojs/ojinputtext', 'ojs/ojaccordion', 'ojs/ojdialog', 'ojs/ojarraydataprovider', 'ojs/ojchart', 'ojs/ojarraytabledatasource',
-  'ojs/ojdatetimepicker', 'ojs/ojtimezonedata', 'ojs/ojprogress', 'ojs/ojselectsingle', 'ojs/ojtoolbar'],
+  'ojs/ojdatetimepicker', 'ojs/ojtimezonedata', 'ojs/ojprogress', 'ojs/ojselectsingle', 'ojs/ojtoolbar', 'ojs/ojlistitemlayout'],
   function (ko, oj, app, moduleUtils, accUtils) {
 
-    function IncidentsViewModel() {
+    function ModeloEvaluacionIndividual() {
       var self = this;
       var grupos = {};
       self.datosAlumno = ko.observable();
       self.idAlumno = ko.observable();
-      self.medicion1 = ko.observable();
-      self.medicion2 = ko.observable();
-      self.medicion3 = ko.observable();
-      self.medicion4 = ko.observable();
-      self.medicion5 = ko.observable();
       self.dataProvider = ko.observable();
       self.datosEstatura = ko.observable();
       self.orientationValue = ko.observable();
@@ -189,85 +184,97 @@ define(['knockout', 'ojs/ojcore', 'appController', 'ojs/ojmodule-element-utils',
           async: false,
           success: function (data) {
             json = JSON.parse(data);
-            if (json.hasOwnProperty("error") && json.error !== "No hay datos.") {
-              alert('Error de autenticación, por favor revisa tus datos.');
+            if (json.hasOwnProperty("error")) {
+              if(json.error === "No hay datos.") {
+                var listaMediciones = document.getElementById("listaMediciones");
+                if(listaMediciones !== undefined && listaMediciones !== null) {
+                  listaMediciones.remove();
+                }
+              } else {
+                alert('Error interno en el servidor, por favo contacta al administrador.');
+              }
               return;
             } else {
-              var numMedicion = 1;
+              document.getElementById("listaMediciones").remove();
+              var contenedor = document.getElementById("contenedorMediciones");
+              var accordion = document.createElement('oj-accordion');
+              accordion.setAttribute("id", "listaMediciones");
+
               json.mediciones.forEach(medicion => {
-                var campos = [];
-                var indice = 0;
+                var colapsableMedicion = document.createElement('oj-collapsible');                
+                var fechaMedicion = document.createElement('h3');
+                fechaMedicion.setAttribute('slot', 'header');
+
+                var listaVista = document.createElement('oj-list-view');
+                var lista = document.createElement('ul');
+
                 for (var llave in medicion) {
-                  if (llave === "id_alumno") {
+                  if (llave === "id_alumno" || llave.includes("id")) {
                     continue;
                   } else if (llave === "fecha") {
-                    document.getElementById("tituloMedicion" + numMedicion).innerText = medicion[llave];
-                    document.getElementById("medicion" + numMedicion).style.display = "initial";
-                    numMedicion++;
+                    fechaMedicion.innerText = medicion[llave];
                     continue;
                   }
-                  var campo = {};
-                  campo["id"] = indice;
+                  
+                  var linea = document.createElement('li');
+                  var contenido = document.createElement('oj-list-item-layout');
+                  var objMedicion = document.createElement('span');
+                  objMedicion.innerText = medicion[llave];
+
+                  var campo = document.createElement('span');
+
                   switch (llave) {
                     case "masa":
-                      campo["campo"] = "Peso";
+                      campo.innerText = "Peso";
                       break;
                     case "imc":
-                      campo["campo"] = "Indice de Masa Corporal";
+                      campo.innerText = "Indice de Masa Corporal";
                       break;
                       case "estatura":
-                        campo["campo"] = "Talla";
+                        campo.innerText = "Talla";
                         break;
                     case "perimetro_cuello":
-                      campo["campo"] = "Perimetro del cuello";
+                      campo.innerText = "Perimetro del cuello";
                       break;
                     case "pliegue_cuello":
-                      campo["campo"] = "Pliegue del cuello";
+                      campo.innerText = "Pliegue del cuello";
                       break;
                     case "subescapula":
-                      campo["campo"] = "Subescapular";
+                      campo.innerText = "Subescapular";
                       break;
                     case "diagnostico_peso":
                     case "diagnostico_talla":
                     case "diagnostico_imc":
                       var nombreMedicion = llave.split("_")[1];
-                      campo["campo"] = "Diagnóstico " + (nombreMedicion.includes("imc") ? "IMC" : (nombreMedicion[0].toUpperCase() + nombreMedicion.slice(1)));
+                      campo.innerText = "Diagnóstico " + (nombreMedicion.includes("imc") ? "IMC" : (nombreMedicion[0].toUpperCase() + nombreMedicion.slice(1)));
                       break;
                     case "z_peso":
                     case "z_talla":
                     case "z_imc":
                       var nombreMedicion = llave.split("_")[1];
-                      campo["campo"] = "Puntaje Z " + (nombreMedicion.includes("imc") ? "IMC" : (nombreMedicion[0].toUpperCase() + nombreMedicion.slice(1)));
+                      campo.innerText = "Puntaje Z " + (nombreMedicion.includes("imc") ? "IMC" : (nombreMedicion[0].toUpperCase() + nombreMedicion.slice(1)));
                       break;
                     default:                    
-                      campo["campo"] = llave[0].toUpperCase() + llave.slice(1).replace("_", " ");
+                      campo.innerText = llave[0].toUpperCase() + llave.slice(1).replace("_", " ");
                       break;
                   }
-                  campo["valor"] = medicion[llave];
-                  if(!llave.includes("id")) {
-                    campos.push(campo);
-                    indice++;
-                  }
+                  campo.classList.add("oj-text-color-secondary");
+                  campo.setAttribute('slot', 'secondary');
+
+                  contenido.appendChild(objMedicion);
+                  contenido.appendChild(campo);
+                  linea.appendChild(contenido);
+                  lista.appendChild(linea);
                 }
 
-                switch (numMedicion) {
-                  case 2:
-                    self.medicion1(new oj.ArrayDataProvider(campos, { keyAttributes: 'id' }));
-                    break;
-                  case 3:
-                    self.medicion2(new oj.ArrayDataProvider(campos, { keyAttributes: 'id' }));
-                    break;
-                  case 4:
-                    self.medicion3(new oj.ArrayDataProvider(campos, { keyAttributes: 'id' }));
-                    break;
-                  case 5:
-                    self.medicion4(new oj.ArrayDataProvider(campos, { keyAttributes: 'id' }));
-                    break;
-                  case 6:
-                    self.medicion5(new oj.ArrayDataProvider(campos, { keyAttributes: 'id' }));
-                    break;
-                }
+                listaVista.appendChild(lista);
+                colapsableMedicion.appendChild(fechaMedicion);
+                colapsableMedicion.appendChild(listaVista);
+                accordion.appendChild(colapsableMedicion);
               });
+
+              contenedor.appendChild(accordion);
+              ko.applyBindings(self, accordion);
             }
           }
         }).fail(function () {
@@ -498,8 +505,8 @@ define(['knockout', 'ojs/ojcore', 'appController', 'ojs/ojmodule-element-utils',
        * after being disconnected.
        */
       self.connected = function () {
-        accUtils.announce('Pagina Evaluacion Individual Cargada.');
-        document.title = "Evaluacion Individual";
+        accUtils.announce('Pagina Evaluación Individual Cargada.');
+        document.title = "Evaluación Individual";
         // Implement further logic if needed
       };
 
@@ -537,6 +544,6 @@ define(['knockout', 'ojs/ojcore', 'appController', 'ojs/ojmodule-element-utils',
      * return a constructor for the ViewModel so that the ViewModel is constructed
      * each time the view is displayed.
      */
-    return IncidentsViewModel;
+    return ModeloEvaluacionIndividual;
   }
 );

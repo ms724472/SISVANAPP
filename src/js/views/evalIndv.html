@@ -81,104 +81,10 @@
             </oj-list-view>
           </oj-collapsible>
           <oj-collapsible id="medicionesAlumno">
-            <span slot="header">Histórico mediciones</span>
-            <oj-accordion>
-              <oj-collapsible id="medicion1" style="display: none;">
-                <span slot="header"><span id="tituloMedicion1"></span></span>
-                <oj-list-view id="listview" aria-label="simple list" data="[[medicion1]]">
-                  <template slot="itemTemplate" data-oj-as="item">
-                    <div class="container">
-                      <div>
-                        <span class="valor">
-                          <oj-bind-text value="[[item.data.valor]]"></oj-bind-text>
-                        </span>
-                      </div>
-                      <div>
-                        <span class="oj-text-xs oj-text-secondary-color">
-                          <oj-bind-text value="[[item.data.campo]]"></oj-bind-text>
-                        </span>
-                      </div>
-                    </div>
-                  </template>
-                </oj-list-view>
-              </oj-collapsible>
-              <oj-collapsible id="medicion2" style="display: none;">
-                <span slot="header"><span id="tituloMedicion2"></span></span>
-                <oj-list-view id="listview" aria-label="simple list" data="[[medicion2]]">
-                  <template slot="itemTemplate" data-oj-as="item">
-                    <div class="container">
-                      <div>
-                        <span class="valor">
-                          <oj-bind-text value="[[item.data.valor]]"></oj-bind-text>
-                        </span>
-                      </div>
-                      <div>
-                        <span class="oj-text-xs oj-text-secondary-color">
-                          <oj-bind-text value="[[item.data.campo]]"></oj-bind-text>
-                        </span>
-                      </div>
-                    </div>
-                  </template>
-                </oj-list-view>
-              </oj-collapsible>
-              <oj-collapsible id="medicion3" style="display: none;">
-                <span slot="header"><span id="tituloMedicion3"></span></span>
-                <oj-list-view id="listview" aria-label="simple list" data="[[medicion3]]">
-                  <template slot="itemTemplate" data-oj-as="item">
-                    <div class="container">
-                      <div>
-                        <span class="valor">
-                          <oj-bind-text value="[[item.data.valor]]"></oj-bind-text>
-                        </span>
-                      </div>
-                      <div>
-                        <span class="oj-text-xs oj-text-secondary-color">
-                          <oj-bind-text value="[[item.data.campo]]"></oj-bind-text>
-                        </span>
-                      </div>
-                    </div>
-                  </template>
-                </oj-list-view>
-              </oj-collapsible>
-              <oj-collapsible id="medicion4" style="display: none;">
-                <span slot="header"><span id="tituloMedicion4"></span></span>
-                <oj-list-view id="listview" aria-label="simple list" data="[[medicion4]]">
-                  <template slot="itemTemplate" data-oj-as="item">
-                    <div class="container">
-                      <div>
-                        <span class="valor">
-                          <oj-bind-text value="[[item.data.valor]]"></oj-bind-text>
-                        </span>
-                      </div>
-                      <div>
-                        <span class="oj-text-xs oj-text-secondary-color">
-                          <oj-bind-text value="[[item.data.campo]]"></oj-bind-text>
-                        </span>
-                      </div>
-                    </div>
-                  </template>
-                </oj-list-view>
-              </oj-collapsible>
-              <oj-collapsible id="medicion5" style="display: none;">
-                <span slot="header"><span id="tituloMedicion5"></span></span>
-                <oj-list-view id="listview" aria-label="simple list" data="[[medicion5]]">
-                  <template slot="itemTemplate" data-oj-as="item">
-                    <div class="container">
-                      <div>
-                        <span class="valor">
-                          <oj-bind-text value="[[item.data.valor]]"></oj-bind-text>
-                        </span>
-                      </div>
-                      <div>
-                        <span class="oj-text-xs oj-text-secondary-color">
-                          <oj-bind-text value="[[item.data.campo]]"></oj-bind-text>
-                        </span>
-                      </div>
-                    </div>
-                  </template>
-                </oj-list-view>
-              </oj-collapsible>
-            </oj-accordion>
+            <span slot="header">Histórico mediciones</span> 
+            <div id="contenedorMediciones">
+              <oj-accordion id="listaMediciones"></oj-accordion>  
+            </div>    
           </oj-collapsible>
           <oj-collapsible id="graficasAlumno">
             <span slot="header">Gráficos de desarrollo</span>

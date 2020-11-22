@@ -22,24 +22,29 @@
             <ul>
               <li id="eval-escuela">
                 <a href="#" aria-controls="panel-reporte-por-escuela" id="tab-eval-escuela">
-                  <span>Evaluaci&oacute;n escolar</span>
+                  <span>Escolar</span>
                 </a>
               </li>
               <li id="eval-grupal">
                 <a href="#" aria-controls="panel-reporte-por-grupo" id="tab-eval-grupal">
-                  <span>Evaluaci&oacute;n grupal</span>
+                  <span>Grupal</span>
+                </a>
+              </li>
+              <li id="evol-escuela">
+                <a href="#" aria-controls="panel-evolucion-escolar" id="tab-evol-escuela">
+                  <span>Evoluci&oacute;n</span>
                 </a>
               </li>
             </ul>
           </oj-tab-bar>
           <br />
           <oj-label style="font-size: 18px;" for="seleccionadorEscuela">Selecciona una escuela:</oj-label>
-          <oj-select-one style="width: 500px;" id="seleccionadorEscuela" options="[[origenDatosEscuelas]]"
+          <oj-select-one style="width: 100%;" id="seleccionadorEscuela" options="[[origenDatosEscuelas]]"
             value="{{escuelaSeleccionada}}" on-value-changed="[[cambioEscuela]]"></oj-select-one>
           <oj-switcher value="[[evaluacionSeleccionada]]">
             <div slot="eval-escuela" id="panel-reporte-por-escuela" role="tabpanel" aria-labelledby="tab-eval-escuela">
               <oj-chart id="graficaGrupo" type="pie" data="[[porcentajesEscuelas]]" animation-on-display="auto"
-                animation-on-data-change="auto" hover-behavior="dim" style="max-width:500px;width:100%;height:350px;">
+                animation-on-data-change="auto" hover-behavior="dim" style="width:100%;height:350px;">
                 <template slot='itemTemplate' data-oj-as='item'>
                   <oj-chart-item value='[[item.data.valor]]' group-id='[[ [item.data.escuela] ]]'
                     series-id='[[item.data.serie]]'>
@@ -52,11 +57,11 @@
             </div>
             <div slot="eval-grupal" id="panel-reporte-por-grupo" role="tabpanel" aria-labelledby="tab-eval-grupal">
               <br />
-              <oj-label style="font-size: 18px;" for="seleccionadorGrupo">Selecciona una grupo:</oj-label>
-              <oj-select-one style="width: 500px;" id="seleccionadorGrupo" options="[[origenDatosGrupos]]"
+              <oj-label style="font-size: 18px;" for="seleccionadorGrupo">Selecciona un grupo:</oj-label>
+              <oj-select-one style="width: 100%;" id="seleccionadorGrupo" options="[[origenDatosGrupos]]"
                 value="{{grupoSeleccionado}}" on-value-changed="[[cambioGrupo]]"></oj-select-one>
               <oj-chart id="graficaGrupo" type="pie" data="[[porcentajesGrupos]]" animation-on-display="auto"
-                animation-on-data-change="auto" hover-behavior="dim" style="max-width:500px;width:100%;height:350px;">
+                animation-on-data-change="auto" hover-behavior="dim" style="width:100%;height:350px;">
                 <template slot='itemTemplate' data-oj-as='item'>
                   <oj-chart-item value='[[item.data.valor]]' group-id='[[ [item.data.escuela] ]]'
                     series-id='[[item.data.serie]]'>
@@ -66,6 +71,9 @@
               <div style="width: 100%; text-align: center;">
                 <oj-button on-oj-action="[[descargarImagen]]">Descargar reporte</oj-button>
               </div>
+            </div>
+            <div slot="evol-escuela" id="panel-evolucion-escolar" role="tabpanel" aria-labelledby="tab-evol-escuela">
+
             </div>
           </oj-switcher>
         </div>
