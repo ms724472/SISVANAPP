@@ -191,7 +191,7 @@
     </div>
   </div>
 </div>
-<oj-dialog style="display:none;width: 100%;" id="dialogoBuscarAlumno" dialog-title="Encontrar alumno por nombre:">
+<oj-dialog style="display:none;width: 95%;" id="dialogoBuscarAlumno" dialog-title="Encontrar alumno por nombre:">
   <div slot="body">
     <div class="oj-form-layout">
       <oj-label for="nombreABuscar" style="display: none;"></oj-label>
@@ -274,28 +274,28 @@
     <oj-button id="botonAgregarAlumno" on-oj-action="[[crearNuevoAlumno]]">Agregar</oj-button>
   </div>
 </oj-dialog>
-<oj-dialog style="display:none" id="dialogoNuevaMedicion" dialog-title="Agregar nueva medición">
+<oj-dialog style="display:none;width: 95%;" id="dialogoNuevaMedicion" dialog-title="Agregar nueva medición">
   <div slot="body">
     <div class="oj-form-layout">
       <div class="oj-form">
         <div class="oj-flex">
           <oj-flex-item>
             <oj-label for="nuevaFMedicion">Fecha medicion:</oj-label>
-            <oj-input-date required="true" id="nuevaFMedicion"></oj-input-date>
+            <oj-input-date class="campo" required="true" id="nuevaFMedicion"></oj-input-date>
             <oj-label for="nuevaMasaMedicion">Masa:</oj-label>
-            <oj-input-text required="true" id="nuevaMasaMedicion" required></oj-input-text>
+            <oj-input-text  class="campo" required="true" id="nuevaMasaMedicion" required></oj-input-text>
             <oj-label for="nuevaEstaturaMedicion">Estatura:</oj-label>
-            <oj-input-text required="true" id="nuevaEstaturaMedicion" required></oj-input-text>
+            <oj-input-text  class="campo" required="true" id="nuevaEstaturaMedicion" required></oj-input-text>
             <oj-label for="nuevaPerimetroCuelloMedicion">Perimetro del Cuello:</oj-label>
-            <oj-input-text id="nuevaPerimetroCuelloMedicion" required></oj-input-text>
+            <oj-input-text id="nuevaPerimetroCuelloMedicion" class="campo" required></oj-input-text>
             <oj-label for="nuevaCinturaMedicion">Cintura:</oj-label>
-            <oj-input-text id="nuevaCinturaMedicion" required></oj-input-text>
+            <oj-input-text id="nuevaCinturaMedicion" class="campo"></oj-input-text>
             <oj-label for="nuevaTricepsMedicion">Triceps:</oj-label>
-            <oj-input-text id="nuevaTricepsMedicion" required></oj-input-text>
+            <oj-input-text id="nuevaTricepsMedicion" class="campo"></oj-input-text>
             <oj-label for="nuevaSubescapulaMedicion">Subescapula:</oj-label>
-            <oj-input-text id="nuevaSubescapulaMedicion" required></oj-input-text>
+            <oj-input-text id="nuevaSubescapulaMedicion" class="campo"></oj-input-text>
             <oj-label for="nuevaPliegueCuelloMedicion">Pliegue del cuello:</oj-label>
-            <oj-input-text id="nuevaPliegueCuelloMedicion" required></oj-input-text>
+            <oj-input-text id="nuevaPliegueCuelloMedicion" class="campo"></oj-input-text>
           </oj-flex-item>
         </div>
       </div>

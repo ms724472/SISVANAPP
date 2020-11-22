@@ -7,10 +7,10 @@
 /*
  * Your incidents ViewModel code goes here
  */
-define(['knockout', 'ojs/ojcore', 'appController', 'ojs/ojmodule-element-utils', 'accUtils', 'ojs/ojlistview', 'ojs/ojtable', 'ojs/ojselectcombobox',
-  'ojs/ojinputtext', 'ojs/ojaccordion', 'ojs/ojdialog', 'ojs/ojarraydataprovider', 'ojs/ojchart', 'ojs/ojarraytabledatasource',
+define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-element-utils', 'accUtils', 'ojs/ojlistview', 'ojs/ojtable', 'ojs/ojselectcombobox',
+  'ojs/ojinputtext', 'ojs/ojaccordion', 'ojs/ojdialog', 'ojs/ojarraydataprovider', 'ojs/ojchart', 'ojs/ojarraytabledatasource', 
   'ojs/ojdatetimepicker', 'ojs/ojtimezonedata', 'ojs/ojprogress', 'ojs/ojselectsingle', 'ojs/ojtoolbar', 'ojs/ojlistitemlayout'],
-  function (ko, oj, app, moduleUtils, accUtils) {
+  function (ko, $, oj, app, moduleUtils, accUtils) {
 
     function ModeloEvaluacionIndividual() {
       var self = this;
@@ -48,6 +48,14 @@ define(['knockout', 'ojs/ojcore', 'appController', 'ojs/ojmodule-element-utils',
           return {
               title: "Histórico Peso"
           };
+      });
+
+      $(document).ready(function () {
+        $("#num-alumno\\|input").on('keyup', function (e) {
+          if (e.key === 'Enter' || e.keyCode === 13) {
+              self.obtenerInfo();
+          }
+      });
       });
 
       function ChartModel() {
@@ -408,7 +416,7 @@ define(['knockout', 'ojs/ojcore', 'appController', 'ojs/ojmodule-element-utils',
 
         $.ajax({type: "POST",
             contentType: "text/plain; charset=utf-8",
-            url: "http://sisvan-iteso.online/SISVANWS/rest/wls/1.0/alumnos/agregarMedicion",
+            url: oj.gWSUrl() + "alumnos/agregarMedicion",
             dataType: "text",
             data: JSON.stringify(bodyRequest).replace(/]|[[]/g, ''),
             async: false,
@@ -452,7 +460,7 @@ define(['knockout', 'ojs/ojcore', 'appController', 'ojs/ojmodule-element-utils',
             fecha_nac: fecha_nac};
         $.ajax({type: "POST",
             contentType: "text/plain; charset=utf-8",
-            url: "http://sisvan-iteso.online/SISVANWS/rest/wls/1.0/alumnos/agregarAlumno",
+            url: oj.gWSUrl() + "alumnos/agregarAlumno",
             dataType: "text",
             data: JSON.stringify(bodyRequest).replace(/]|[[]/g, ''),
             async: false,
