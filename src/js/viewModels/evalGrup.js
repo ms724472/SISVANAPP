@@ -8,7 +8,7 @@
  * Your dashboard ViewModel code goes here
  */
 define(['ojs/ojcore', 'knockout', 'appController', 'ojs/ojmodule-element-utils', 'accUtils', 'ojs/ojselectcombobox',
-  'ojs/ojarraydataprovider', 'ojs/ojchart', 'ojs/ojswitcher'],
+  'ojs/ojarraydataprovider', 'ojs/ojchart', 'ojs/ojswitcher', 'ojs/ojdialog', 'ojs/ojdatetimepicker'],
   function (oj, ko, app, moduleUtils, accUtils) {
 
     function ModeloEvaluacionesGrupales() {
@@ -20,214 +20,207 @@ define(['ojs/ojcore', 'knockout', 'appController', 'ojs/ojmodule-element-utils',
       self.porcentajesEscuelas = ko.observable();
       self.porcentajesGrupos = ko.observable();
       self.origenDatosGrupos = ko.observable();
-      self.origenDatosGrupo1 = ko.observable();
-      self.origenDatosGrupo2 = ko.observable();
-      self.origenDatosGrupo3 = ko.observable();
-      self.origenDatosGrupo4 = ko.observable();
-      self.origenDatosGrupo5 = ko.observable();
-      self.origenDatosGrupo6 = ko.observable();
+      self.tipoEvalSeleccionada = ko.observable("imc");
+      self.tituloGraficoEscolar = ko.observable();
+      self.valorDesde = ko.observable();
+      self.valorHasta = ko.observable();
+      var todosLosGrupos = {};
+      var nombreEscuelaSeleccionada = "";
+      var etiquetaGrupoSeleccionado;
+      self.escuelas = [];
+      self.estiloGraficos = ko.observable({"fontSize":"15px"});
+      self.tituloGraficoEscolar = ko.observable();
+      self.tituloGraficoGrupal = ko.observable();
+      self.sinGrupos = ko.observable(false);
 
-      $.ajax({
-        type: "GET",
-        contentType: "text/plain; charset=utf-8",
-        url: "http://sisvan-iteso.online/SISVANWS/rest/wls/1.0/obtenerEscuelas",
-        dataType: "text",
-        async: false,
-        success: function (data) {
-          json = $.parseJSON(data);
-          if (json.hasOwnProperty("error")) {
-            alert('No se encontro ninguna escuela');
-            return;
-          } else {
-            self.origenDatosEscuelas(new oj.ArrayDataProvider(json.escuelas));
-          }
-        }
-      }).fail(function () {
-        //alert("Error en el servidor, favor de comunicarse con el administrador.");
-        return;
-      });
-
-      self.obtenerPorcentajesGrupales = function (idGrupo) {
-        $.ajax({
-          type: "GET",
-          contentType: "text/plain; charset=utf-8",
-          url: "http://sisvan-iteso.online/SISVANWS/rest/wls/1.0/escolares/obtenerPorcentajesGrupo/" + idGrupo,
-          dataType: "text",
-          async: false,
-          success: function (data) {
-            json = $.parseJSON(data);
-            if (json.hasOwnProperty("error")) {
-              alert('No se encontro ningun dato, contacte al administrador.');
-              return;
-            } else {
-              self.porcentajesGrupos(new oj.ArrayDataProvider(json.datos));
+      self.obtenerLasEscuelas = function () {
+        var peticionListaEscuelas = new XMLHttpRequest();
+        peticionListaEscuelas.open("GET", oj.gWSUrl() + "obtenerEscuelas", false);
+        peticionListaEscuelas.onreadystatechange = function () {
+            if (this.readyState === 4) {
+                if (this.status === 200) {
+                    var respuestaJSON = JSON.parse(this.responseText);
+                    if (respuestaJSON.hasOwnProperty("error")) {
+                        if (respuestaJSON.error === "No hay datos.") {
+                            alert('No se encontro ninguna escuela');
+                        } else {
+                          alert("Error en el servidor, favor de comunicarse con el administrador.");
+                        }
+                    } else {
+                      self.escuelas = respuestaJSON.escuelas;
+                      self.origenDatosEscuelas(new oj.ArrayDataProvider(respuestaJSON.escuelas));
+                    }
+                } else {
+                  alert("Error en el servidor, favor de comunicarse con el administrador.");
+                }
             }
-          }
-        }).fail(function () {
-          //alert("Error en el servidor, favor de comunicarse con el administrador.");
-          return;
-        });
+        };
+
+        peticionListaEscuelas.send();
       };
 
-      $.ajax({
-        type: "GET",
-        contentType: "text/plain; charset=utf-8",
-        url: "http://sisvan-iteso.online/SISVANWS/rest/wls/1.0/escuelas/obtenerGrupos/1",
-        dataType: "text",
-        async: false,
-        success: function (data) {
-          json = $.parseJSON(data);
-          if (json.hasOwnProperty("error")) {
-            alert('No se encontro ningun grupo');
-            return;
-          } else {
-            self.origenDatosGrupos(new oj.ArrayDataProvider(json.grupos));
-            self.origenDatosGrupo1(new oj.ArrayDataProvider(json.grupos));
-            self.obtenerPorcentajesGrupales(1);
-          }
-        }
-      }).fail(function (data, xhr) {
-        //alert("Error en el servidor, favor de comunicarse con el administrador.");
-        return;
+      self.tituloEscuela = ko.pureComputed(function () {
+        return {
+          title: "Escuela Primaria: " + nombreEscuelaSeleccionada
+        };
       });
 
-      $.ajax({
-        type: "GET",
-        contentType: "text/plain; charset=utf-8",
-        url: "http://sisvan-iteso.online/SISVANWS/rest/wls/1.0/escuelas/obtenerGrupos/2",
-        dataType: "text",
-        async: false,
-        success: function (data) {
-          json = $.parseJSON(data);
-          if (json.hasOwnProperty("error")) {
-            alert('No se encontro ningun grupo');
-            return;
-          } else {
-            self.origenDatosGrupo2(new oj.ArrayDataProvider(json.grupos));
-          }
-        }
-      }).fail(function () {
-        //alert("Error en el servidor, favor de comunicarse con el administrador.");
-        return;
+      self.tituloGrupo = ko.pureComputed(function () {
+        return {
+          title: "Escuela Primaria: " + nombreEscuelaSeleccionada + "\nGrupo: " + etiquetaGrupoSeleccionado
+        };
       });
 
-      $.ajax({
-        type: "GET",
-        contentType: "text/plain; charset=utf-8",
-        url: "http://sisvan-iteso.online/SISVANWS/rest/wls/1.0/escuelas/obtenerGrupos/3",
-        dataType: "text",
-        async: false,
-        success: function (data) {
-          json = $.parseJSON(data);
-          if (json.hasOwnProperty("error")) {
-            alert('No se encontro ningun grupo');
-            return;
-          } else {
-            self.origenDatosGrupo3(new oj.ArrayDataProvider(json.grupos));
+      self.obtenerTodosLosGrupos = function () {
+        var peticionGrupos = new XMLHttpRequest();
+        peticionGrupos.open("GET", oj.gWSUrl() + "grupos/obtenerTodosLosGrupos/" + self.valorHasta(), false);
+        peticionGrupos.onreadystatechange = function () {
+          if (this.readyState === 4) {
+            if (this.status === 200) {
+              todosLosGrupos = JSON.parse(this.responseText);
+              self.origenDatosGrupos(new oj.ArrayDataProvider(todosLosGrupos[self.escuelas[0].value]));
+            }
           }
-        }
-      }).fail(function () {
-        //alert("Error en el servidor, favor de comunicarse con el administrador.");
-        return;
-      });
+        };
+        peticionGrupos.send();
+      };
 
-      $.ajax({
-        type: "GET",
-        contentType: "text/plain; charset=utf-8",
-        url: "http://sisvan-iteso.online/SISVANWS/rest/wls/1.0/escuelas/obtenerGrupos/4",
-        dataType: "text",
-        async: false,
-        success: function (data) {
-          json = $.parseJSON(data);
-          if (json.hasOwnProperty("error")) {
-            alert('No se encontro ningun grupo');
-            return;
-          } else {
-            self.origenDatosGrupo4(new oj.ArrayDataProvider(json.grupos));
+
+      self.funcionTecho = function (desde) {
+        var fecha = new Date(desde() + "T12:00:00");
+        var fechaHasta;
+
+        if (fecha.getMonth() >= 7 && fecha.getMonth() <= 11) {
+          var anio = fecha.getFullYear() + 1;
+          fechaHasta = anio + '-' + '07-31';
+        } else {
+          fechaHasta = fecha.getFullYear() + '-' + '07-31';
+        }
+
+        self.valorHasta(fechaHasta);
+        return fechaHasta;
+      };
+
+      self.obtenerPorcentajesEscolares = function (idEscuela, diagnostico) {
+        var servicio = "escolares/obtenerPorcentajesEscuela/?id_escuela=" + idEscuela +
+          "&desde=" + self.valorDesde() +
+          "&hasta=" + self.valorHasta() +
+          "&diagnostico=" + diagnostico;
+        var peticionPorcentajesEscolares = new XMLHttpRequest();
+        peticionPorcentajesEscolares.open("GET", oj.gWSUrl() + servicio, false);
+        peticionPorcentajesEscolares.onreadystatechange = function () {
+          if (this.readyState === 4) {
+            if (this.status === 200) {
+              var respuestaJSON = JSON.parse(this.responseText);
+              if (respuestaJSON.hasOwnProperty("error")) {
+                if (respuestaJSON.error === "No hay datos.") {
+                  self.porcentajesEscuelas(new oj.ArrayDataProvider([{ NoData: "" }]));
+                } else {
+                  alert('No se encontro ningun dato, contacte al administrador.');
+                }
+              } else {
+                self.porcentajesEscuelas(new oj.ArrayDataProvider(respuestaJSON.datos));
+                self.tituloGraficoEscolar("PRIMARIA " + nombreEscuelaSeleccionada);
+              }
+            } else {
+              alert('No se encontro ningun dato, contacte al administrador.');
+            }
           }
-        }
-      }).fail(function () {
-        //alert("Error en el servidor, favor de comunicarse con el administrador.");
-        return;
-      });
+        };
+        peticionPorcentajesEscolares.send();
+      };
 
-      $.ajax({
-        type: "GET",
-        contentType: "text/plain; charset=utf-8",
-        url: "http://sisvan-iteso.online/SISVANWS/rest/wls/1.0/escuelas/obtenerGrupos/5",
-        dataType: "text",
-        async: false,
-        success: function (data) {
-          json = $.parseJSON(data);
-          if (json.hasOwnProperty("error")) {
-            alert('No se encontro ningun grupo');
-            return;
-          } else {
-            self.origenDatosGrupo5(new oj.ArrayDataProvider(json.grupos));
+      self.obtenerPorcentajesGrupales = function (idGrupo, diagnostico) {
+        var servicio = "escolares/obtenerPorcentajesGrupo/?id_grupo=" + idGrupo +
+          "&desde=" + self.valorDesde() +
+          "&hasta=" + self.valorHasta() +
+          "&diagnostico=" + diagnostico;
+
+        var peticionPorcentajesGrupos = new XMLHttpRequest();
+        peticionPorcentajesGrupos.open("GET", oj.gWSUrl() + servicio, false);
+        peticionPorcentajesGrupos.onreadystatechange = function () {
+          if (this.readyState === 4) {
+            if (this.status === 200) {
+              var respuestaJSON = JSON.parse(this.responseText);
+              if (respuestaJSON.hasOwnProperty("error")) {
+                if (respuestaJSON.error === "No hay datos.") {
+                  self.porcentajesGrupos(new oj.ArrayDataProvider([{ NoData: "" }]));
+                } else {
+                  alert("Error en el servidor, favor de comunicarse con el administrador.");
+                }
+              } else {
+                self.porcentajesGrupos(new oj.ArrayDataProvider(respuestaJSON.datos));
+                self.tituloGraficoGrupal("PRIMARIA " + nombreEscuelaSeleccionada + " GRUPO " + etiquetaGrupoSeleccionado);
+              }
+            } else {
+              alert("Error en el servidor, favor de comunicarse con el administrador.");
+            }
           }
-        }
-      }).fail(function () {
-        //alert("Error en el servidor, favor de comunicarse con el administrador.");
-        return;
-      });
+        };
+        peticionPorcentajesGrupos.send();
+      };   
 
-      $.ajax({
-        type: "GET",
-        contentType: "text/plain; charset=utf-8",
-        url: "http://sisvan-iteso.online/SISVANWS/rest/wls/1.0/escuelas/obtenerGrupos/6",
-        dataType: "text",
-        async: false,
-        success: function (data) {
-          json = $.parseJSON(data);
-          if (json.hasOwnProperty("error")) {
-            alert('No se encontro ningun grupo');
-            return;
-          } else {
-            self.origenDatosGrupo6(new oj.ArrayDataProvider(json.grupos));
+      self.obtenerRangos = function () {
+        var peticionRangos = new XMLHttpRequest();
+        peticionRangos.open("GET", oj.gWSUrl() + "obtenerRangos", false);
+        peticionRangos.onreadystatechange = function () {
+          if (this.readyState === 4) {
+            if (this.status === 200) {
+              var respuestaJSON = JSON.parse(this.responseText);
+              var desde = respuestaJSON.rangos[0].desde;
+              var hasta = respuestaJSON.rangos[0].hasta;
+
+              if (desde === "" || hasta === "") {
+                var fechaActual = new Date();
+                if (fechaActual.getMonth() >= 7 && fechaActual.getMonth() <= 11) {
+                  self.valorDesde(fechaActual.getFullYear() + "-08-01");
+                  self.valorHasta((fechaActual.getFullYear() + 1) + "-07-31");
+                } else {
+                  self.valorDesde((fechaActual.getFullYear() - 1) + "-08-01");
+                  self.valorHasta(fechaActual.getFullYear() + "-07-31");
+                }
+              } else {
+                self.valorDesde(desde);
+                self.valorHasta(hasta);
+              }
+              
+              self.obtenerLasEscuelas();
+              self.obtenerTodosLosGrupos();
+              nombreEscuelaSeleccionada = self.escuelas[0].label;
+              self.obtenerPorcentajesEscolares(self.escuelas[0].value, "imc");
+              etiquetaGrupoSeleccionado = todosLosGrupos[self.escuelas[0].value][0].label;
+              self.obtenerPorcentajesGrupales(todosLosGrupos[self.escuelas[0].value][0].value, "imc");
+              //self.obtenerHistoricoEscolar(todosLosGrupos[self.escuelas[0].value][0].value, "imc");
+            } else {
+              alert("Error cargando ultimas mediciones, favor de contactar al administrador.")
+            }
           }
-        }
-      }).fail(function () {
-        //alert("Error en el servidor, favor de comunicarse con el administrador.");
-        return;
-      });
+        };
 
-      self.cambioGrupo = event => {
-        self.generarGraficaGrupo();
+        peticionRangos.send();
+      };
+
+      self.obtenerRangos();      
+
+      self.actualizarGraficos = function (event) {
+        self.obtenerPorcentajesEscolares(self.escuelaSeleccionada(), self.tipoEvalSeleccionada());
+        self.obtenerPorcentajesGrupales(self.grupoSeleccionado(), self.tipoEvalSeleccionada());
+        self.cerrarDialogo();
+        //self.obtenerHistoricoEscolar(escuelaSeleccionada, diagnosticoSeleccionado);
       };
 
       self.cambioEscuela = event => {
-        if (self.evaluacionSeleccionada() === "eval-grupal") {
-          switch (event.detail.value) {
-            case "1":
-              self.origenDatosGrupos(self.origenDatosGrupo1());
-              break;
-            case "2":
-              self.origenDatosGrupos(self.origenDatosGrupo2());
-              break;
-            case "3":
-              self.origenDatosGrupos(self.origenDatosGrupo3());
-              break;
-            case "4":
-              self.origenDatosGrupos(self.origenDatosGrupo4());
-              break;
-            case "5":
-              self.origenDatosGrupos(self.origenDatosGrupo5());
-              break;
-            case "6":
-              self.origenDatosGrupos(self.origenDatosGrupo6());
-              break;
-          }
+        nombreEscuelaSeleccionada = event.target.innerText;
+        escuelaSeleccionada = event.target.value;
+        grupoSeleccionado = "";
+        if (todosLosGrupos.hasOwnProperty(event.target.value)) {
+          self.origenDatosGrupos(new oj.ArrayDataProvider(todosLosGrupos[event.target.value]));
+          self.sinGrupos(false);
         } else {
-          self.generarGraficaEscuela();
+          self.origenDatosGrupos(new oj.ArrayDataProvider([{"value":-1,"label":"Sin grupos"}]));
+          self.sinGrupos(true);
         }
-      };
-
-      self.generarGraficaEscuela = function () {
-        self.obtenerPorcentajesEscolares(document.getElementById('seleccionadorEscuela').value);
-      };
-
-      self.generarGraficaGrupo = function () {
-        self.obtenerPorcentajesGrupales(document.getElementById('seleccionadorGrupo').value);
+        self.grupoSeleccionado(null);
       };
 
       // Header Config
@@ -255,18 +248,18 @@ define(['ojs/ojcore', 'knockout', 'appController', 'ojs/ojmodule-element-utils',
 
       self.descargarImagen = function () {
         var createPDFRequest = new XMLHttpRequest();
-        createPDFRequest.open('POST', "http://sisvan-iteso.online/SISVANWS/rest/wls/1.0/generarPDF", true);
+        createPDFRequest.open('POST', oj.gWSUrl + "generarImagen", true);
         createPDFRequest.responseType = "arraybuffer";
         createPDFRequest.onreadystatechange = function () {
           if (this.readyState == 4) {
             if (this.status == 200) {
               var link = document.createElement("a");
               var arrayBuffer = this.response;
-              var blob = new Blob([arrayBuffer], { type: "application/pdf" });
+              var blob = new Blob([this.response], { type: "image/png" });
               var pdfUrl = URL.createObjectURL(blob);
               link.href = pdfUrl;
               link.style = "visibility:hidden";
-              link.download = "Reporte.pdf";
+              link.download = "Reporte.png";
               document.body.appendChild(link);
               link.click();
               document.body.removeChild(link);
@@ -283,6 +276,14 @@ define(['ojs/ojcore', 'knockout', 'appController', 'ojs/ojmodule-element-utils',
         createPDFRequest.send(JSON.stringify(cuerpoPeticion));
       };
 
+      self.ingresarParametros = function() {
+        document.getElementById("dialogo-parametros").open();
+      };
+
+      self.cerrarDialogo = function() {
+        document.getElementById("dialogo-parametros").close();
+      };
+
       /**
        * Optional ViewModel method invoked after the View is disconnected from the DOM.
        */
@@ -296,31 +297,7 @@ define(['ojs/ojcore', 'knockout', 'appController', 'ojs/ojmodule-element-utils',
        */
       self.transitionCompleted = function () {
         // Implement if needed
-      };
-
-      self.obtenerPorcentajesEscolares = function (idEscuela) {
-        $.ajax({
-          type: "GET",
-          contentType: "text/plain; charset=utf-8",
-          url: "http://sisvan-iteso.online/SISVANWS/rest/wls/1.0/escolares/obtenerPorcentajesEscuela/" + idEscuela,
-          dataType: "text",
-          async: false,
-          success: function (data) {
-            json = $.parseJSON(data);
-            if (json.hasOwnProperty("error")) {
-              alert('No se encontro ningun dato, contacte al administrador.');
-              return;
-            } else {
-              self.porcentajesEscuelas(new oj.ArrayDataProvider(json.datos));
-            }
-          }
-        }).fail(function () {
-          //alert("Error en el servidor, favor de comunicarse con el administrador.");
-          return;
-        });
-      };
-
-      self.obtenerPorcentajesEscolares(1);
+      };            
     }
 
     /*
