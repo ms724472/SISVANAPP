@@ -248,21 +248,14 @@ define(['ojs/ojcore', 'knockout', 'appController', 'ojs/ojmodule-element-utils',
 
       self.descargarImagen = function () {
         var createPDFRequest = new XMLHttpRequest();
-        createPDFRequest.open('POST', oj.gWSUrl + "generarImagen", true);
+        createPDFRequest.open('POST', oj.gWSUrl() + "generarImagen", true);
         createPDFRequest.responseType = "arraybuffer";
         createPDFRequest.onreadystatechange = function () {
           if (this.readyState == 4) {
             if (this.status == 200) {
-              var link = document.createElement("a");
-              var arrayBuffer = this.response;
               var blob = new Blob([this.response], { type: "image/png" });
-              var pdfUrl = URL.createObjectURL(blob);
-              link.href = pdfUrl;
-              link.style = "visibility:hidden";
-              link.download = "Reporte.png";
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
+              oj.gGuardarArchivos("Reporte.png", blob);
+            
             } else {
               alert("Error en el servidor, favor de comunicarse con el administrador.");
             }

@@ -48,6 +48,15 @@
   max-width: none;
 }
 
+#encabezadoSincronizacion {
+  position: relative;
+  width: 100%;
+}
+
+.elementosSincronizacion {
+  vertical-align: middle;
+}
+
 #header-icon{
   display: flex;
   height: 30px;  
@@ -72,4 +81,9 @@
   background-color: #ccc6ad;
   border: none;
   box-shadow: none;
+}
+
+#switchSincronizacion {
+  position: absolute;
+  right: 0px;
 }

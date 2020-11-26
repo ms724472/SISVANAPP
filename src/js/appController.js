@@ -14,13 +14,14 @@ define(['knockout', 'ojs/ojcore', 'ojs/ojrouter', 'ojs/ojthemeutils', 'ojs/ojmod
       var self = this;
       oj.gOfflineMode = ko.observable(false);
       oj.gWSUrl = ko.observable("https://sve-nace.freeddns.org/SISVANWS/rest/wls/1.0/");
+      var directorioAndroid = "file:///storage/emulated/0/";
 
       self.KnockoutTemplateUtils = KnockoutTemplateUtils;
 
       function querySuccess(tx, results) {
         var len = results.rows.length;
         for (var i = 0; i < len; i++) {
-          console.log(results.rows.item(i).cuentaPeso);
+          //console.log(results.rows.item(i).cuentaPeso);
         }
       }
 
@@ -84,6 +85,46 @@ define(['knockout', 'ojs/ojcore', 'ojs/ojrouter', 'ojs/ojthemeutils', 'ojs/ojmod
         });
       };
       self.moduleAnimation = ModuleAnimations.switcher(switcherCallback);
+
+      function manejarErrores() {
+        alert("Problemas durante la descarga favor de contactar al administrador.");
+      }
+
+      function escribirArchivo (direccionArchivo, binario) {
+        direccionArchivo.createWriter(function (writer) {
+          writer.onwriteend = function () {
+            alert("El archivo ha sido guardado en la carpeta de Descargas.");
+          };
+
+          writer.seek(0);
+          writer.write(binario);
+
+        }, manejarErrores);
+      }
+
+       // Funcion global para el guardado de archivos
+       oj.gGuardarArchivos = function (nombre, binario) {
+         window.resolveLocalFileSystemURL(directorioAndroid, function (directorioSistema) {
+           directorioSistema.getDirectory("Download", {
+             create: true,
+             exclusive: false
+           },
+             function (directorio) {
+               //Aqui se especifica el nombre del archivo
+               var fechaActual = new Date();
+               var fechaRegistro = fechaActual.toJSON().slice(0, 19);
+               fechaRegistro = fechaRegistro.replace("T", "-").replace(":", "-").replace(":", "-");
+               var nombreFinal = nombre.split(".")[0] + "-" + fechaRegistro + "." + nombre.split(".")[1];
+               directorio.getFile(nombreFinal, {
+                 create: true,
+                 exclusive: false
+               },
+                 function (direccionArchivo) {
+                   escribirArchivo(direccionArchivo, binario)
+                 }, manejarErrores);
+             }, manejarErrores);
+         }, manejarErrores);
+       };    
 
       // Navigation setup
       var navData = [

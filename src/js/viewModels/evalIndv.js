@@ -8,13 +8,15 @@
  * Your incidents ViewModel code goes here
  */
 define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-element-utils', 'accUtils', 'ojs/ojlistview', 'ojs/ojtable', 'ojs/ojselectcombobox',
-  'ojs/ojinputtext', 'ojs/ojaccordion', 'ojs/ojdialog', 'ojs/ojarraydataprovider', 'ojs/ojchart', 'ojs/ojarraytabledatasource', 
-  'ojs/ojdatetimepicker', 'ojs/ojtimezonedata', 'ojs/ojprogress', 'ojs/ojselectsingle', 'ojs/ojtoolbar', 'ojs/ojlistitemlayout'],
+  'ojs/ojinputtext', 'ojs/ojaccordion', 'ojs/ojdialog', 'ojs/ojarraydataprovider', 'ojs/ojchart', 'ojs/ojarraytabledatasource', 'ojs/ojswitch',
+  'ojs/ojdatetimepicker', 'ojs/ojtimezonedata', 'ojs/ojprogress', 'ojs/ojselectsingle', 'ojs/ojtoolbar', 'ojs/ojlistitemlayout', 'ojs/ojvalidation-datetime'],
   function (ko, $, oj, app, moduleUtils, accUtils) {
 
     function ModeloEvaluacionIndividual() {
       var self = this;
       var grupos = {};
+      var datosAlumnoActual = {};  
+      var medicionesAlumnoActual = [];
       self.datosAlumno = ko.observable();
       self.idAlumno = ko.observable();
       self.dataProvider = ko.observable();
@@ -22,16 +24,35 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
       self.orientationValue = ko.observable();
       self.origenDatosNombres = ko.observable();
       self.alumnoSeleccionado = ko.observable();
-      self.nuevoEscuelaAlumno = ko.observable();
       self.origenDatosEscuelas = ko.observable();
       self.origenDatosGrupos = ko.observable();
-      self.nuevoSexoAlumno = ko.observable();
       self.nuevoGradoAlumno = ko.observable();
-      self.nuevoGrupoAlumno = ko.observable();
       self.colorIndicador = ko.observable("#237BB1");
       self.datosIMC = ko.observable();
       self.datosEstatura = ko.observable();
       self.datosPeso  = ko.observable();
+      self.idNuevoAlumno = ko.observable();
+      self.nombreNuevoAlumno = ko.observable();
+      self.apellidoPNuevoAlumno = ko.observable();
+      self.apellidoMNuevoAlumno = ko.observable();
+      self.sexoNuevoAlumno = ko.observable();
+      self.fNacimientoNuevoAlumno = ko.observable();
+      self.nuevoEscuelaAlumno = ko.observable();
+      self.nuevoGrupoAlumno = ko.observable();
+      self.idDeshabilitado = ko.observable(false);
+      self.tituloDialogoAlumno = ko.observable("Agregar nuevo alumno");
+      self.botonFormularioAlumno = ko.observable("Agregar");
+      self.tituloDialogoMedicion = ko.observable("Agregar nueva medición");
+      self.botonFormularioMedicion = ko.observable("Agregar");
+      self.fechaMedicion = ko.observable();
+      self.peso = ko.observable();
+      self.talla = ko.observable();
+      self.perCuello = ko.observable();
+      self.cintura = ko.observable();
+      self.triceps = ko.observable();
+      self.subEscapular = ko.observable();
+      self.pliegueCuello = ko.observable();
+      self.evitarCiclo = ko.observable(false);
       self.tituloIMC = ko.pureComputed(function () {
         return {
             title: "Histórico IMC"
@@ -53,9 +74,81 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
       $(document).ready(function () {
         $("#num-alumno\\|input").on('keyup', function (e) {
           if (e.key === 'Enter' || e.keyCode === 13) {
-              self.obtenerInfo();
+            self.obtenerInfo();
           }
+        });
       });
+
+      self.convertidorFechas = ko.observable(oj.Validation.converterFactory(oj.ConverterFactory.CONVERTER_TYPE_DATETIME).
+        createConverter(
+          {
+            pattern: "dd/MM/yyyy"
+          }));
+
+      self.validadorNumerico = ko.computed(function () {
+        return [{
+          type: 'regExp',
+          options: {
+            pattern: '[0-9]+',
+            messageSummary: 'Valor inválido',
+            messageDetail: 'Corrija el campo.'
+          }
+        }];
+      });
+
+      self.validadorMedicion = ko.computed(function () {
+        return [{
+          type: 'regExp',
+          options: {
+            pattern: '[0-9]+(\\.[0-9]+)?',
+            messageSummary: 'Valor inválido',
+            messageDetail: 'Corrija el campo.'
+          }
+        }];
+      });
+
+      self.validadorEstatura = ko.computed(function () {
+        return [{
+          type: 'regExp',
+          options: {
+            pattern: '1[0-9]{2}(\\.[0-9]+)?',
+            messageSummary: 'Valor inválido',
+            messageDetail: 'Debe ser en cm.'
+          }
+        }];
+      });
+
+      self.validadorTexto = ko.computed(function () {
+        return [{
+          type: 'regExp',
+          options: {
+            pattern: '[\\w\\s]+',
+            messageSummary: 'Valor inválido',
+            messageDetail: 'Corrija el campo.'
+          }
+        }];
+      });
+
+      self.validadorFechas = ko.computed(function () {
+        return [{
+          type: 'regExp',
+          options: {
+            pattern: '.+',
+            messageSummary: 'Valor inválido',
+            messageDetail: 'Corrija el campo.'
+          }
+        }];
+      });
+
+      self.validadorGrupos = ko.computed(function () {
+        return [{
+          type: 'numberRange',
+          options: {
+            min: 1,
+            messageSummary: 'Grupo invalido',
+            messageDetail: 'Seleccione un grupo.'
+          }
+        }];
       });
 
       function ChartModel() {
@@ -81,8 +174,8 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
                 var gruposEscuela = $.extend([], grupos[Object.keys(grupos)[0]]);
                 gruposEscuela.splice(0, 0, { value: -1, label: "NO SELECCIONADO" });
                 self.origenDatosGrupos(new oj.ArrayDataProvider(gruposEscuela, { keyAttributes: 'value' }));
-                self.nuevoGrupoAlumno(-1);
-                self.nuevoEscuelaAlumno(-1);
+                self.nuevoGrupoAlumno(null);
+                self.nuevoEscuelaAlumno(null);
               }
             }
           }
@@ -128,7 +221,7 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
             gruposEscuela = [{ value: -1, label: "NO SELECCIONADO" }];
           }
           self.origenDatosGrupos(new oj.ArrayDataProvider(gruposEscuela, { keyAttributes: 'value' }));
-          self.nuevoGrupoAlumno(-1);
+          self.nuevoGrupoAlumno(null);
         }
       };
 
@@ -176,7 +269,8 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
                 }
               }
               self.datosAlumno(new oj.ArrayDataProvider(campos, { keyAttributes: 'id' }));
-              self.colorIndicador(json.datos[0].sexo === "FEMENINO" ? "#E4007C" : "#237BB1"); 
+              self.colorIndicador(json.datos[0].sexo === "FEMENINO" ? "#E4007C" : "#237BB1");
+              datosAlumnoActual = json.datos[0]; 
             }
           }
         }).fail(function () {
@@ -203,10 +297,14 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
               }
               return;
             } else {
-              document.getElementById("listaMediciones").remove();
+              var listaMediciones = document.getElementById("listaMediciones");
+              if (listaMediciones !== undefined && listaMediciones !== null) {
+                listaMediciones.remove();
+              }
               var contenedor = document.getElementById("contenedorMediciones");
               var accordion = document.createElement('oj-accordion');
               accordion.setAttribute("id", "listaMediciones");
+              medicionesAlumnoActual = json.mediciones;
 
               json.mediciones.forEach(medicion => {
                 var colapsableMedicion = document.createElement('oj-collapsible');                
@@ -280,7 +378,7 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
                 colapsableMedicion.appendChild(listaVista);
                 accordion.appendChild(colapsableMedicion);
               });
-
+              
               contenedor.appendChild(accordion);
               ko.applyBindings(self, accordion);
             }
@@ -337,8 +435,40 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
         });
       };
 
+      self.sincronizarDatos = function() {
+        document.getElementById('dialogoSincronizacion').open();
+      };
+
+      self.revisarDescarga = function() {
+        if(self.evitarCiclo() === true) {
+          self.evitarCiclo(false);
+          return;
+        }
+
+        if(oj.gOfflineMode() === true) {
+          if(self.nuevoEscuelaAlumno() === null || self.nuevoEscuelaAlumno() === undefined || self.nuevoEscuelaAlumno() === -1) { 
+            alert("Seleccions una escuela");
+            return;
+          } 
+
+          document.getElementById('dialogoDescarga').open();
+        } else {
+          
+        }
+      };
+
+      self.cancelarSincronizacion = function() {
+        document.getElementById('dialogoSincronizacion').close();
+      };
+
+      self.cancelarDescarga = function() {
+        document.getElementById('dialogoDescarga').close();
+        self.evitarCiclo(true);
+        oj.gOfflineMode(false);
+      };
+
       self.buscarAlumno = function () {
-        document.getElementById('dialogoBuscarAlumno').open();
+        document.getElementById('dialogoBuscarAlumno').open();        
       };
 
       self.cancelarBusqueda = function () {
@@ -347,13 +477,62 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
 
       self.nuevaMedicion = function () {
         if(self.idAlumno() !== undefined && self.idAlumno() !== ""){
+          self.origenDatosGrupos(new oj.ArrayDataProvider(grupos[datosAlumnoActual.id_escuela], { keyAttributes: 'value' }));
+          self.nuevoGrupoAlumno(datosAlumnoActual.id_grupo);
+          self.tituloDialogoMedicion("Agregar nueva medición");
+          self.botonFormularioMedicion("Agregar");
           document.getElementById('dialogoNuevaMedicion').open();
         } else {
           alert("Selecciona o crea un alumno para agregar una nueva medición.")
         }
       };
 
+      self.editarMedicion = function() {
+        var listaMediciones = document.getElementById("listaMediciones");
+        if(self.idAlumno() === undefined || self.idAlumno() === null || self.idAlumno() === "") {
+          alert("Favor de seleccionar un alumno");
+        }else if(listaMediciones === undefined || listaMediciones === null) {
+          alert("Para editar mediciones es necesario tener al menos una.");
+        } else {
+          var mediciones = listaMediciones.getElementsByClassName("oj-expanded");
+          if(mediciones.length < 1) {
+            alert("Favor de seleccionar una medición");
+          } else {
+            var fechaMedicion = mediciones[0].firstChild.innerText;
+            medicionesAlumnoActual.find(medicion => {
+              if(medicion.fecha === fechaMedicion) {
+                var compFecha = medicion.fecha.split("/");
+                self.fechaMedicion(compFecha[2] + '-' + compFecha[1] + '-' + compFecha[0]);
+                self.peso(medicion.masa.toString());
+                self.talla(medicion.estatura.toString());
+                self.perCuello(medicion.perimetro_cuello.toString());
+                self.cintura(medicion.cintura.toString());
+                self.triceps(medicion.triceps.toString());
+                self.subEscapular(medicion.subescapula.toString());
+                self.pliegueCuello(medicion.pliegue_cuello.toString());
+                self.origenDatosGrupos(new oj.ArrayDataProvider(grupos[datosAlumnoActual.id_escuela], { keyAttributes: 'value' }));
+                self.nuevoGrupoAlumno(medicion.id_grupo);
+                self.tituloDialogoMedicion("Editar medición");
+                self.botonFormularioMedicion("Guardar");
+                document.getElementById('dialogoNuevaMedicion').open();
+                return true;
+              } 
+              return false;
+            });
+          }
+        } 
+      };
+
       self.cancelarNuevaMedicion = function () {
+        self.fechaMedicion("");
+        self.peso("");
+        self.talla("");
+        self.perCuello("");
+        self.cintura("");
+        self.triceps("");
+        self.subEscapular("");
+        self.pliegueCuello("");
+        self.nuevoGrupoAlumno(null);
         document.getElementById('dialogoNuevaMedicion').close();
       };
 
@@ -386,117 +565,211 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
       };
 
       self.abrirDialogoNuevoAlumno = function() {
+        self.tituloDialogoAlumno("Agregar nuevo alumno");
+        self.botonFormularioAlumno("Agregar");
         document.getElementById('dialogoNuevoAlumno').open();
       };
 
-      self.cancelarNuevoAlumno = function() {
-        document.getElementById('dialogoNuevoAlumno').close();
+      self.abrirDialogoEditarAlumno = function() {
+        if(self.idAlumno() === undefined || self.idAlumno() === null || self.idAlumno() === "") {
+          alert("Favor de seleccionar un alumno");
+        }
+
+        self.tituloDialogoAlumno("Editar alumno");
+        self.botonFormularioAlumno("Guardar");
+        self.idNuevoAlumno(self.idAlumno().toString());
+        self.idDeshabilitado(true);
+        self.nombreNuevoAlumno(datosAlumnoActual.nombre);
+        self.apellidoPNuevoAlumno(datosAlumnoActual.apellido_p);
+        self.apellidoMNuevoAlumno(datosAlumnoActual.apellido_m);
+        self.sexoNuevoAlumno(datosAlumnoActual.sexo.toLowerCase());
+        var compFechaNac = datosAlumnoActual.fecha_nac.split("/");
+        self.fNacimientoNuevoAlumno(compFechaNac[2] + "-" + compFechaNac[1] + "-" + compFechaNac[0]);
+        self.nuevoEscuelaAlumno(datosAlumnoActual.id_escuela);
+        self.origenDatosGrupos(new oj.ArrayDataProvider(grupos[self.nuevoEscuelaAlumno()], { keyAttributes: 'value' }));
+        self.nuevoGrupoAlumno(datosAlumnoActual.id_grupo);
+        document.getElementById('dialogoNuevoAlumno').open();
       }
 
-      self.crearNuevaMedicion = function () {
-        document.getElementById('dialogoCargando').open();
-        var idAlumno = document.getElementById("num-alumno").value;
-        var fecha = document.getElementById("nuevaFMedicion").value;
-        var masa = document.getElementById("nuevaMasaMedicion").value;
-        var estatura = document.getElementById("nuevaEstaturaMedicion").value;
-        var perimetro_cuello = document.getElementById("nuevaPerimetroCuelloMedicion").value;
-        var cintura = document.getElementById("nuevaCinturaMedicion").value;
-        var triceps = document.getElementById("nuevaTricepsMedicion").value;
-        var subEscapula = document.getElementById("nuevaSubescapulaMedicion").value;
-        var pliegueCuello = document.getElementById("nuevaPliegueCuelloMedicion").value;
-        var bodyRequest = {id_alumno: idAlumno,
-            fecha: fecha,
-            masa: masa,
-            estatura: estatura,
-            perimetro_cuello: perimetro_cuello,
-            cintura: cintura,
-            triceps: triceps,
-            subEscapula: subEscapula,
-            pliegueCuello: pliegueCuello};
+      self.cancelarNuevoAlumno = function() {
+        document.getElementById('dialogoNuevoAlumno').close();
+        self.idNuevoAlumno("");
+        self.nombreNuevoAlumno("");
+        self.apellidoPNuevoAlumno("");
+        self.apellidoMNuevoAlumno("");
+        self.sexoNuevoAlumno("femenino");
+        self.fNacimientoNuevoAlumno("");
+        self.nuevoEscuelaAlumno(null);
+        self.nuevoGrupoAlumno(null);
+        self.idDeshabilitado(false);
+        if (Object.keys(grupos).length > 0) {
+          self.origenDatosGrupos(new oj.ArrayDataProvider([{NoData:""}]));
+        }
+      };
 
-        $.ajax({type: "POST",
-            contentType: "text/plain; charset=utf-8",
-            url: oj.gWSUrl() + "alumnos/agregarMedicion",
-            dataType: "text",
-            data: JSON.stringify(bodyRequest).replace(/]|[[]/g, ''),
-            async: false,
-            success: function (data) {
-                json = JSON.parse(data);
-                if (json.hasOwnProperty("error")) {
-                    document.getElementById('dialogoCargando').close();
-                    alert('Error, por favor revisa tus datos.');
-                    return;
-                } else {
-                    self.obtenerInfo();
-                    document.getElementById('dialogoCargando').close();
-                    document.getElementById('dialogoNuevaMedicion').close();
-                    document.getElementById('nuevaFMedicion').value = '';
-                    document.getElementById('nuevaMasaMedicion').value = '';
-                    document.getElementById("nuevaEstaturaMedicion").value = '';
-                    alert('Agregado correctamente.');
-                }
+      self.calcularMediana = function(event) {
+        console.log(event.target.parentElement.parentElement);
+      };
+
+      self.crearNuevaMedicion = function () {
+        var campoFecha = document.getElementById("nuevaFMedicion");
+        var campoPeso = document.getElementById("nuevaMasaMedicion");
+        var campoTalla = document.getElementById("nuevaEstaturaMedicion");
+        var campoPerimetro = document.getElementById("nuevaPerimetroCuelloMedicion");
+        var campoCintura = document.getElementById("nuevaCinturaMedicion");
+        var campoTriceps = document.getElementById("nuevaTricepsMedicion");
+        var campoSubescapular = document.getElementById("nuevaSubescapulaMedicion");
+        var campoPliegue = document.getElementById("nuevaPliegueCuelloMedicion");
+
+        campoFecha.validate();
+        campoPeso.validate();
+        campoTalla.validate();
+        campoPerimetro.validate();
+        campoCintura.validate();
+        campoTriceps.validate();
+        campoSubescapular.validate();
+        campoPliegue.validate();
+
+        if (self.nuevoGrupoAlumno() === -1 || self.nuevoGrupoAlumno() === null || self.nuevoGrupoAlumno() === undefined) {
+          alert("Favor de seleccionar un grupo.");
+          return;
+        }
+
+        if (campoFecha.valid === 'invalidShown' || campoPeso.valid === 'invalidShown' ||
+          campoTalla.valid === 'invalidShown' || campoPerimetro.valid === 'invalidShown' ||
+          campoCintura.valid === 'invalidShown' || campoTriceps.valid === 'invalidShown' ||
+          campoSubescapular.valid === 'invalidShown' || campoPliegue.valid === 'invalidShown') {
+          return;
+        }
+
+        document.getElementById('dialogoCargando').open();
+        var bodyRequest = {
+          id_alumno: self.idAlumno().toString(),
+          fecha: self.fechaMedicion(),
+          masa: self.peso(),
+          estatura: self.talla(),
+          id_grupo: self.nuevoGrupoAlumno().toString(),
+          perimetro_cuello: self.perCuello(),
+          cintura: self.cintura(),
+          triceps: self.triceps(),
+          subescapula: self.subEscapular(),
+          pliegue_cuello: self.pliegueCuello()
+        };
+
+        var servicio = self.botonFormularioMedicion() === "Agregar" ?
+          "agregarMedicion" :
+          "actualizarMedicion";
+
+        $.ajax({
+          type: "POST",
+          contentType: "text/plain; charset=utf-8",
+          url: oj.gWSUrl() + "alumnos/" + servicio,
+          dataType: "text",
+          data: JSON.stringify(bodyRequest).replace(/]|[[]/g, ''),
+          async: false,
+          success: function (data) {
+            json = JSON.parse(data);
+            if (json.hasOwnProperty("error")) {
+              document.getElementById('dialogoCargando').close();
+              alert('Error, por favor revisa tus datos.');
+              return;
+            } else {
+              self.obtenerInfo();
+              document.getElementById('dialogoCargando').close();
+              self.cancelarNuevaMedicion();
+              if (self.botonFormularioMedicion() === "Agregar") {
+                alert('Agregado correctamente.');
+              } else {
+                alert('Guardado correctamente.');
+              }
             }
+          }
         }).fail(function () {
-            document.getElementById('dialogoCargando').close();
-            alert("Error en el servidor, favor de comunicarse con el administrador.");
-            return;
+          document.getElementById('dialogoCargando').close();
+          alert("Error en el servidor, favor de comunicarse con el administrador.");
+          return;
         });
-    };
+      };
 
       self.crearNuevoAlumno = function () {
-        document.getElementById('dialogoCargando').open();
-        var idAlumno = document.getElementById("nuevoIdAlumno").value;
-        var nombre = document.getElementById("nuevoNombreAlumno").value;
-        var apellido_p = document.getElementById("nuevoApellidoPAlumno").value;
-        var apellido_m = document.getElementById("nuevoApellidoMAlumno").value;
-        var sexo = document.getElementById("nuevoSexoAlumno").value;
-        var fecha_nac = document.getElementById("nuevoFNacimientoAlumno").value;
+        var campoId = document.getElementById("nuevoIdAlumno");
+        var campoNombre = document.getElementById("nuevoNombreAlumno");
+        var campoApellidoP = document.getElementById("nuevoApellidoPAlumno");
+        var campoApellidoM = document.getElementById("nuevoApellidoMAlumno");
+        var campoFechaNac = document.getElementById("nuevoFNacimientoAlumno");
 
-        var bodyRequest = {id_alumno: idAlumno,
-            nombre: nombre,
-            apellido_p: apellido_p,
-            apellido_m: apellido_m,
-            sexo: sexo,
-            fecha_nac: fecha_nac};
-        $.ajax({type: "POST",
-            contentType: "text/plain; charset=utf-8",
-            url: oj.gWSUrl() + "alumnos/agregarAlumno",
-            dataType: "text",
-            data: JSON.stringify(bodyRequest).replace(/]|[[]/g, ''),
-            async: false,
-            success: function (data) {
-                json = JSON.parse(data);
-                if (json.hasOwnProperty("error")) {
-                    document.getElementById('dialogoCargando').close();
-                    alert('Error, por favor revisa tus datos.');
-                    return;
-                } else {
-                    document.getElementById("num-alumno").value = idAlumno;
-                    self.obtenerInfo();
-                    document.getElementById('dialogoCargando').close();
-                    document.getElementById('dialogoNuevoAlumno').close();
-                    document.getElementById("nuevoIdAlumno").value = '';
-                    document.getElementById("nuevoNombreAlumno").value = '';
-                    document.getElementById("nuevoApellidoPAlumno").value = '';
-                    document.getElementById("nuevoApellidoMAlumno").value = '';
-                    document.getElementById("nuevoSexoAlumno").value = 'Femenino';
-                    document.getElementById("nuevoFNacimientoAlumno").value = '';
-                    documet.getElementById("nuevoEscuelaAlumno").value = '';
-                    document.getElementById("nuevoGradoAlumno").value = '';
-                    document.getElementById("nuevoGrupoAlumno").value = '';
-                    alert('Agregado correctamente.');
-                }
+        if (self.nuevoGrupoAlumno() === -1 || self.nuevoGrupoAlumno() === null || self.nuevoGrupoAlumno() === undefined) {
+          alert("Favor de seleccionar un grupo.");
+          return;
+        }
+
+        campoId.validate();
+        campoNombre.validate();
+        campoApellidoP.validate();
+        campoApellidoM.validate();
+        campoFechaNac.validate();
+
+        if (campoId.valid === 'invalidShown' || campoNombre.valid === 'invalidShown' ||
+          campoApellidoP.valid === 'invalidShown' || campoApellidoM.valid === 'invalidShown' ||
+          campoFechaNac.valid === 'invalidShown') {
+          return;
+        }
+
+        document.getElementById('dialogoCargando').open();
+
+        var bodyRequest = {
+          id_alumno: self.idNuevoAlumno(),
+          nombre: self.nombreNuevoAlumno().toUpperCase(),
+          apellido_p: self.apellidoPNuevoAlumno().toUpperCase(),
+          apellido_m: self.apellidoMNuevoAlumno().toUpperCase(),
+          sexo: self.sexoNuevoAlumno(),
+          fecha_nac: self.fNacimientoNuevoAlumno(),
+          id_grupo: self.nuevoGrupoAlumno().toString()
+        };
+
+        var servicio = self.botonFormularioAlumno() === 'Agregar' ?
+          'agregarAlumno' :
+          'actualizarAlumno';
+
+        $.ajax({
+          type: "POST",
+          contentType: "text/plain; charset=utf-8",
+          url: oj.gWSUrl() + "alumnos/" + servicio,
+          dataType: "text",
+          data: JSON.stringify(bodyRequest).replace(/]|[[]/g, ''),
+          async: true,
+          success: function (data) {
+            json = JSON.parse(data);
+            if (json.hasOwnProperty("error")) {
+              document.getElementById('dialogoCargando').close();
+              alert('Error, por favor revisa tus datos.');
+              return;
+            } else {
+              document.getElementById("num-alumno").value = self.idNuevoAlumno();
+              self.obtenerInfo();
+              document.getElementById('dialogoCargando').close();
+              self.cancelarNuevoAlumno();
+              if(self.botonFormularioAlumno() === 'Guardar') {                                
+                alert('Guardado correctamente.');
+            } else {
+                alert('Agregado correctamente.');
             }
+            }
+          }
         }).fail(function () {
-            document.getElementById('dialogoCargando').close();
-            alert("Error en el servidor, favor de comunicarse con el administrador.");
-            return;
+          document.getElementById('dialogoCargando').close();
+          alert("Error en el servidor, favor de comunicarse con el administrador.");
+          return;
         });
-    };
+      };
 
       self.seleccionarAlumno = function () {
         var datos = '{"NoData":""}';
         datos = JSON.parse("[" + datos + "]");
+        if(self.alumnoSeleccionado() === undefined || self.alumnoSeleccionado() === null) {
+          alert("Favor de seleccionar un alumno.");
+          return;
+        }
         document.getElementById('num-alumno').value = self.alumnoSeleccionado()._keys.values().next().value;
         document.getElementById('nombreABuscar').value = '';
         self.origenDatosNombres(new oj.ArrayDataProvider(datos));

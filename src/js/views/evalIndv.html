@@ -31,7 +31,7 @@
               <span slot='startIcon' class='oj-ux-ico-contact-plus'></span>
               Agregar alumno
             </oj-button>
-            <oj-button id='editar-alumno' display='icons'>
+            <oj-button id='editar-alumno' display='icons' on-oj-action="[[abrirDialogoEditarAlumno]]">
               <span slot='startIcon' class='oj-ux-ico-contact-edit'></span>
               Editar alumno
             </oj-button>
@@ -42,7 +42,7 @@
               <span slot='startIcon' class='oj-ux-ico-add-create-page'></span>
               Agregar medici&oacute;n
             </oj-button>
-            <oj-button id='editar-alumno' display='icons'>
+            <oj-button id='editar-alumno' display='icons' on-oj-action="[[editarMedicion]]">
               <span slot='startIcon' class='oj-ux-ico-add-edit-page'></span>
               Editar medici&oacute;n
             </oj-button>
@@ -53,12 +53,13 @@
               <span slot='startIcon' class='oj-ux-ico-file-excel'></span>
               Descargar informaci&oacute;n
             </oj-button>
+
+            <oj-button id='editar-alumno' display='icons' on-oj-action="[[sincronizarDatos]]">
+              <span slot='startIcon' class='oj-ux-ico-sync'></span>
+              Sincronizaci&oacute;n
+            </oj-button>
           
           </oj-toolbar>
-            <!--oj-button on-oj-action='[[obtenerMediciones]]'><span slot='endIcon'
-              class="oj-fwk-icon oj-fwk-icon-magnifier"></span></oj-button>
-          <oj-button>
-          -->
         </oj-flex-item>
         <oj-accordion id="acordeonDatos">
           <oj-collapsible id="datosAlumno" expanded>
@@ -236,34 +237,58 @@
     <p></p>
   </div>
 </oj-dialog>
-<oj-dialog style="display:none" id="dialogoNuevoAlumno" dialog-title="Agregar nuevo alumno">
+<oj-dialog style="display:none" id="dialogoNuevoAlumno" dialog-title="[[tituloDialogoAlumno]]">
   <div id="cuperpoDialogoAlumno" slot="body">
     <div class="oj-form-layout">
       <div class="oj-form">
         <div class="oj-flex">
           <oj-flex-item style="width: 100%;">
             <oj-label for="nuevoIdAlumno" show-required>Identificador:</oj-label>
-            <oj-input-text class="campo" id="nuevoIdAlumno" required></oj-input-text>
+            <oj-input-text class="campo" id="nuevoIdAlumno" value="{{idNuevoAlumno}}" disabled="[[idDeshabilitado]]" validators="[[validadorNumerico]]" 
+            required translations='{
+                "required": {
+                  "messageSummary": "Valor requerido.",  
+                  "messageDetail": "No puede estar vacio."}}'></oj-input-text>
             <oj-label for="nuevoNombreAlumno" show-required>Nombre(s):</oj-label>
-            <oj-input-text class="campo" id="nuevoNombreAlumno" required></oj-input-text>
+            <oj-input-text class="campo" id="nuevoNombreAlumno" value="{{nombreNuevoAlumno}}" validators="[[validadorTexto]]" 
+            required translations='{
+                "required": {
+                  "messageSummary": "Valor requerido.",  
+                  "messageDetail": "No puede estar vacio."}}'></oj-input-text>
             <oj-label for="nuevoApellidoPAlumno" show-required>Apellido Paterno:</oj-label>
-            <oj-input-text class="campo" id="nuevoApellidoPAlumno" required></oj-input-text>
+            <oj-input-text class="campo" id="nuevoApellidoPAlumno" value="{{apellidoPNuevoAlumno}}" validators="[[validadorTexto]]" 
+            required translations='{
+                "required": {
+                  "messageSummary": "Valor requerido.",  
+                  "messageDetail": "No puede estar vacio."}}'></oj-input-text>
             <oj-label for="nuevoApellidoMAlumno" show-required>Apellido Materno:</oj-label>
-            <oj-input-text class="campo" id="nuevoApellidoMAlumno" required></oj-input-text>
+            <oj-input-text class="campo" id="nuevoApellidoMAlumno" value="{{apellidoMNuevoAlumno}}" validators="[[validadorTexto]]" 
+            required translations='{
+                "required": {
+                  "messageSummary": "Valor requerido.",  
+                  "messageDetail": "No puede estar vacio."}}'></oj-input-text>
             <oj-label for="nuevoSexoAlumno" show-required>Sexo:</oj-label>
-            <oj-select-single class="campo" id="nuevoSexoAlumno" value="{{nuevoSexoAlumno}}" required>
+            <oj-select-one class="campo" id="nuevoSexoAlumno" value="{{sexoNuevoAlumno}}" required>
               <oj-option value="femenino">FEMENINO</oj-option>
               <oj-option value="masculino">MASCULINO</oj-option>
-            </oj-select-single>
+            </oj-select-one>
             <oj-label for="nuevoFNacimientoAlumno" show-required>Fecha nacimiento:</oj-label>
-            <oj-input-date class="campo" id="nuevoFNacimientoAlumno"required></oj-input-date>
+            <oj-input-date class="campo" id="nuevoFNacimientoAlumno" value="{{fNacimientoNuevoAlumno}}" converter=[[convertidorFechas]] validators="[[validadorFechas]]" 
+            required translations='{
+                "required": {
+                  "messageSummary": "Valor requerido.",  
+                  "messageDetail": "No puede estar vacio."}}'></oj-input-date>
             <oj-label for="nuevoEscuelaAlumno" show-required>Escuela:</oj-label>
-            <oj-select-single class="campo" id="nuevoEscuelaAlumno" options="[[origenDatosEscuelas]]" value="{{nuevoEscuelaAlumno}}"
+            <oj-select-one class="campo" id="nuevoEscuelaAlumno" options="[[origenDatosEscuelas]]" value="{{nuevoEscuelaAlumno}}"
               on-value-changed="[[escuelaSeleccionada]]" required>
-            </oj-select-single>
+            </oj-select-one>
             <oj-label for="nuevoGrupoMedicion" show-required>Grupo:</oj-label>
-            <oj-select-single class="campo" id="nuevoGrupoMedicion" options="[[origenDatosGrupos]]" value="{{nuevoGrupoAlumno}}" required>
-            </oj-select-single>
+            <oj-select-one class="campo" id="nuevoGrupoMedicion" options="[[origenDatosGrupos]]" value="{{nuevoGrupoAlumno}}" validators="[[validadorGrupos]]" 
+            required translations='{
+                "required": {
+                  "messageSummary": "Valor requerido.",  
+                  "messageDetail": "No puede estar vacio."}}'>
+            </oj-select-one>
           </oj-flex-item>
         </div>
       </div>
@@ -271,31 +296,83 @@
   </div>
   <div style="padding-top: 0;" slot="footer">
     <oj-button id="botonAgregarAlumno" on-oj-action="[[cancelarNuevoAlumno]]">Cancelar</oj-button>
-    <oj-button id="botonAgregarAlumno" on-oj-action="[[crearNuevoAlumno]]">Agregar</oj-button>
+    <oj-button id="botonAgregarAlumno" on-oj-action="[[crearNuevoAlumno]]">
+      <span><oj-bind-text value="[[botonFormularioAlumno]]"></oj-bind-text></span>
+    </oj-button>
   </div>
 </oj-dialog>
-<oj-dialog style="display:none;width: 95%;" id="dialogoNuevaMedicion" dialog-title="Agregar nueva medición">
+<oj-dialog style="display:none;width: 95%;" id="dialogoNuevaMedicion" dialog-title="[[tituloDialogoMedicion]]">
   <div slot="body">
     <div class="oj-form-layout">
       <div class="oj-form">
         <div class="oj-flex">
-          <oj-flex-item>
-            <oj-label for="nuevaFMedicion">Fecha medicion:</oj-label>
-            <oj-input-date class="campo" required="true" id="nuevaFMedicion"></oj-input-date>
-            <oj-label for="nuevaMasaMedicion">Masa:</oj-label>
-            <oj-input-text  class="campo" required="true" id="nuevaMasaMedicion" required></oj-input-text>
-            <oj-label for="nuevaEstaturaMedicion">Estatura:</oj-label>
-            <oj-input-text  class="campo" required="true" id="nuevaEstaturaMedicion" required></oj-input-text>
+          <oj-flex-item style="width: 100%;">
+            <oj-label for="nuevaFMedicion" show-required>Fecha medicion:</oj-label>
+            <oj-input-date class="campo" required="true" id="nuevaFMedicion" value="{{fechaMedicion}}" converter=[[convertidorFechas]] validators="[[validadorFechas]]" 
+            required translations='{
+                "required": {
+                  "messageSummary": "Valor requerido.",  
+                  "messageDetail": "No puede estar vacio."}}'></oj-input-date>
+            <oj-label for="nuevaMasaMedicion" show-required>Peso:</oj-label>
+            <oj-input-text class="campo" id="nuevaMasaMedicion" value="{{peso}}" virtual-keyboard="number"
+              validators="[[validadorMedicion]]" required translations='{
+                            "required": {
+                              "messageSummary": "Valor requerido.",  
+                              "messageDetail": "No puede estar vacio."}}'>
+              <oj-button slot="end" display="icons" chroming="borderless" on-oj-action="[[calcularMediana]]">
+                Calcular mediana
+                <span slot="endIcon" class="oj-ux-ico-calculator" role="img"></span>
+              </oj-button>
+            </oj-input-text>
+            <oj-label for="nuevaEstaturaMedicion" show-required>Talla:</oj-label>
+            <oj-input-text class="campo" required="true" id="nuevaEstaturaMedicion" virtual-keyboard="number" value="{{talla}}"
+              validators="[[validadorEstatura]]" required translations='{
+                            "required": {
+                              "messageSummary": "Valor requerido.",  
+                              "messageDetail": "No puede estar vacio."}}'>
+              <oj-button slot="end" display="icons" chroming="borderless">
+                Calcular mediana
+                <span slot="endIcon" class="oj-ux-ico-calculator" role="img"></span>
+              </oj-button>
+            </oj-input-text>
             <oj-label for="nuevaPerimetroCuelloMedicion">Perimetro del Cuello:</oj-label>
-            <oj-input-text id="nuevaPerimetroCuelloMedicion" class="campo" required></oj-input-text>
+            <oj-input-text id="nuevaPerimetroCuelloMedicion" class="campo" value="{{perCuello}}" virtual-keyboard="number" validators="[[validadorMedicion]]">
+              <oj-button slot="end" display="icons" chroming="borderless">
+                Calcular mediana
+                <span slot="endIcon" class="oj-ux-ico-calculator" role="img"></span>
+              </oj-button>
+            </oj-input-text>
             <oj-label for="nuevaCinturaMedicion">Cintura:</oj-label>
-            <oj-input-text id="nuevaCinturaMedicion" class="campo"></oj-input-text>
+            <oj-input-text id="nuevaCinturaMedicion" class="campo" value="{{cintura}}" virtual-keyboard="number" validators="[[validadorMedicion]]">
+              <oj-button slot="end" display="icons" chroming="borderless">
+                Calcular mediana
+                <span slot="endIcon" class="oj-ux-ico-calculator" role="img"></span>
+              </oj-button>
+            </oj-input-text>
             <oj-label for="nuevaTricepsMedicion">Triceps:</oj-label>
-            <oj-input-text id="nuevaTricepsMedicion" class="campo"></oj-input-text>
-            <oj-label for="nuevaSubescapulaMedicion">Subescapula:</oj-label>
-            <oj-input-text id="nuevaSubescapulaMedicion" class="campo"></oj-input-text>
+            <oj-input-text id="nuevaTricepsMedicion" class="campo" value="{{triceps}}" virtual-keyboard="number" validators="[[validadorMedicion]]">
+              <oj-button slot="end" display="icons" chroming="borderless">
+                Calcular mediana
+                <span slot="endIcon" class="oj-ux-ico-calculator" role="img"></span>
+              </oj-button>
+            </oj-input-text>
+            <oj-label for="nuevaSubescapulaMedicion">Subescapular:</oj-label>
+            <oj-input-text id="nuevaSubescapulaMedicion" class="campo" value="{{subEscapular}}" virtual-keyboard="number" validators="[[validadorMedicion]]">
+              <oj-button slot="end" display="icons" chroming="borderless">
+                Calcular mediana
+                <span slot="endIcon" class="oj-ux-ico-calculator" role="img"></span>
+              </oj-button>
+            </oj-input-text>
             <oj-label for="nuevaPliegueCuelloMedicion">Pliegue del cuello:</oj-label>
-            <oj-input-text id="nuevaPliegueCuelloMedicion" class="campo"></oj-input-text>
+            <oj-input-text id="nuevaPliegueCuelloMedicion" class="campo" value="{{pliegueCuello}}" virtual-keyboard="number" validators="[[validadorMedicion]]">
+              <oj-button slot="end" display="icons" chroming="borderless">
+                Calcular mediana
+                <span slot="endIcon" class="oj-ux-ico-calculator" role="img"></span>
+              </oj-button>
+            </oj-input-text>
+            <oj-label for="nuevoGrupoMedicion" show-required>Grupo:</oj-label>
+            <oj-select-one class="campo" id="nuevoGrupoMedicion" options="[[origenDatosGrupos]]" value="{{nuevoGrupoAlumno}}" required>
+            </oj-select-one>
           </oj-flex-item>
         </div>
       </div>
@@ -303,6 +380,39 @@
   </div>
   <div slot="footer">
     <oj-button id="botonCancelarMedicion" on-oj-action="[[cancelarNuevaMedicion]]">Cancelar</oj-button>
-    <oj-button id="botonAgregarMedicion" on-oj-action="[[crearNuevaMedicion]]">Agregar</oj-button>
+    <oj-button id="botonAgregarMedicion" on-oj-action="[[crearNuevaMedicion]]">
+      <span><oj-bind-text value="[[botonFormularioMedicion]]"></oj-bind-text></span>
+    </oj-button>
+  </div>
+</oj-dialog>
+<oj-dialog  style="display:none;width: 95%;" id="dialogoSincronizacion">
+  <div slot="header" id="encabezadoSincronizacion">
+    <span class="elementosSincronizacion">Modo desconectado</span>
+    <oj-switch class="elementosSincronizacion" id="switchSincronizacion" value="{{oj.gOfflineMode}}" on-value-changed="[[revisarDescarga]]"></oj-switch>
+  </div>
+  <div slot="body">
+    <oj-label for="nuevoEscuelaAlumno">Seleccione la escuela a sincronizar:</oj-label>
+    <oj-select-one class="campo" id="nuevoEscuelaAlumno" options="[[origenDatosEscuelas]]" value="{{nuevoEscuelaAlumno}}"
+      on-value-changed="[[escuelaSeleccionada]]" disabled="[[oj.gOfflineMode]]">
+    </oj-select-one>
+  </div>
+  <div slot="footer">
+    <oj-button id="botonCancelarMedicion" on-oj-action="[[cancelarSincronizacion]]">Cancelar</oj-button>
+    <oj-button id="botonSincronizar" disabled="[[!oj.gOfflineMode()]]">Sincronizar</oj-button>
+  </div>
+</oj-dialog>
+<oj-dialog  style="display:none;width: 95%;" id="dialogoDescarga" dialog-title="¡ATENCIÓN!">
+  <div slot="body">
+    Est&aacute;s a punto de iniciar el modo de trabajo sin conexi&oacute;n, durante el mismo
+    solo podr&aacute;s trabajar &uacute;nica y exclusivamente con los alumnos de la escuela 
+    seleccionada, al finalizar tu jornada de trabajo podr&aacute;s sincronizar las mediciones 
+    y alumnos capturados al servidor. 
+    <br/>
+    <br/>
+    <strong>La descarga puede tomar algunos minutos, por favor se paciente.</strong>
+  </div>
+  <div slot="footer">
+    <oj-button id="botonCancelarDescarga" on-oj-action="[[cancelarDescarga]]">Cancelar</oj-button>
+    <oj-button id="botonDescargar">Descargar</oj-button>
   </div>
 </oj-dialog>
