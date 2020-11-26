@@ -7,16 +7,17 @@
 /*
  * Your incidents ViewModel code goes here
  */
-define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-element-utils', 'accUtils', 'ojs/ojlistview', 'ojs/ojtable', 'ojs/ojselectcombobox',
+define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-element-utils', 'accUtils', 'ojs/ojknockout-keyset', 'ojs/ojlistview', 'ojs/ojtable', 'ojs/ojselectcombobox',
   'ojs/ojinputtext', 'ojs/ojaccordion', 'ojs/ojdialog', 'ojs/ojarraydataprovider', 'ojs/ojchart', 'ojs/ojarraytabledatasource', 'ojs/ojswitch',
   'ojs/ojdatetimepicker', 'ojs/ojtimezonedata', 'ojs/ojprogress', 'ojs/ojselectsingle', 'ojs/ojtoolbar', 'ojs/ojlistitemlayout', 'ojs/ojvalidation-datetime'],
-  function (ko, $, oj, app, moduleUtils, accUtils) {
+  function (ko, $, oj, app, moduleUtils, accUtils, keySet) {
 
     function ModeloEvaluacionIndividual() {
       var self = this;
       var grupos = {};
       var datosAlumnoActual = {};  
       var medicionesAlumnoActual = [];
+      var numeroDeMedida = 0;
       self.datosAlumno = ko.observable();
       self.idAlumno = ko.observable();
       self.dataProvider = ko.observable();
@@ -53,6 +54,14 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
       self.subEscapular = ko.observable();
       self.pliegueCuello = ko.observable();
       self.evitarCiclo = ko.observable(false);
+      self.nuevaMedida = ko.observable();
+      self.medidas = ko.observableArray([]);
+      self.medidaSeleccionada = new keySet.ObservableKeySet();  
+      self.listaMedidas = new oj.ArrayDataProvider(this.medidas, { keyAttributes: 'id' });
+      self.medidaVacia = ko.observable(true);
+      self.medianaCalculada = ko.observable("");
+      self.medidaACalcular = ko.observable("");
+
       self.tituloIMC = ko.pureComputed(function () {
         return {
             title: "Histórico IMC"
@@ -100,7 +109,7 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
         return [{
           type: 'regExp',
           options: {
-            pattern: '[0-9]+(\\.[0-9]+)?',
+            pattern: '\\d+(\\.\\d\{1,2})?',
             messageSummary: 'Valor inválido',
             messageDetail: 'Corrija el campo.'
           }
@@ -435,6 +444,76 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
         });
       };
 
+      self.valorMedidaCambio = function (event) {
+        var valor = event.detail.value;
+        self.medidaVacia(valor.trim().length === 0);
+        self.nuevaMedida(valor);
+      }.bind(self);
+
+      self.calcularMedia = function() {
+        if(self.medidas().length === 0) {
+          self.medianaCalculada("");
+          return;
+        }
+
+        var media = 0;
+
+        ko.utils.arrayForEach(self.medidas(), function(medida) {
+          media = media + parseFloat(medida.item);
+        });
+
+        media = (Math.round((media/self.medidas().length) * 100) / 100).toFixed(2);
+        self.medianaCalculada(media);
+      };
+
+      self.sinSeleccion = ko.computed(function () {
+        return self.medidaSeleccionada().values().size === 0;
+      }, self);
+
+      self.agregarMedida = function () {
+        var nuevaMedida = document.getElementById("nuevaMedida");
+        nuevaMedida.validate();
+
+        if(nuevaMedida.valid === 'invalidShown') {
+          return;
+        }
+        var medidaFormateada = (Math.round(parseFloat(self.nuevaMedida()) * 100) / 100).toFixed(2);
+        numeroDeMedida++;
+        self.medidas.push({ id: numeroDeMedida, item:  medidaFormateada});
+        self.nuevaMedida("");
+        self.calcularMedia();        
+      }.bind(self);
+
+      self.eliminarMedida = function() {
+        self.medidaSeleccionada().values().forEach(function (id) {
+          self.medidas.remove(function (item) {
+            return (item.id === id);
+          });
+        }.bind(self));
+
+        self.calcularMedia();   
+      }.bind(self);
+
+      self.calcularMediana = function(event) {
+        self.medidaACalcular(event.target.parentElement.parentElement.id);
+        document.getElementById("dialogoMediana").open();
+      };
+
+      self.llenarCampo = function() {
+        document.getElementById(self.medidaACalcular()).value = self.medianaCalculada();
+        self.cancelarMediana();
+      };
+
+      self.cancelarMediana = function() {
+        numeroDeMedida = 0;
+        self.nuevaMedida("");
+        self.medidas.remove(function (item) {
+          return true;
+        });
+        self.medianaCalculada("");
+        document.getElementById("dialogoMediana").close();
+      }.bind(self);
+
       self.sincronizarDatos = function() {
         document.getElementById('dialogoSincronizacion').open();
       };
@@ -605,10 +684,6 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
         if (Object.keys(grupos).length > 0) {
           self.origenDatosGrupos(new oj.ArrayDataProvider([{NoData:""}]));
         }
-      };
-
-      self.calcularMediana = function(event) {
-        console.log(event.target.parentElement.parentElement);
       };
 
       self.crearNuevaMedicion = function () {

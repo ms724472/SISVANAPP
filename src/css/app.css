@@ -57,6 +57,12 @@
   vertical-align: middle;
 }
 
+.medida {
+  position: absolute;
+  right: 0px;
+  display: contents;
+}
+
 #header-icon{
   display: flex;
   height: 30px;  
@@ -70,6 +76,10 @@
 
 .header-container{
   width: 100%;
+}
+
+.medida-alineacion {
+  text-align: right;
 }
 
 #botonConfiguracion {
@@ -86,4 +96,11 @@
 #switchSincronizacion {
   position: absolute;
   right: 0px;
+}
+
+#valor-mediana {  
+  width: -webkit-fill-available;
+  display: inline-block;
+  text-align: right;
+  padding-right: 1rem;
 }
