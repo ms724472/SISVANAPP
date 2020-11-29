@@ -13,32 +13,38 @@ define(['knockout', 'ojs/ojcore', 'ojs/ojrouter', 'ojs/ojthemeutils', 'ojs/ojmod
      function ControllerViewModel() {
       var self = this;
       oj.gOfflineMode = ko.observable(false);
-      oj.gWSUrl = ko.observable("https://sve-nace.freeddns.org/SISVANWS/rest/wls/1.0/");
+      oj.gWSUrl = ko.observable();
+      oj.gConexionDB = ko.observable();
       var directorioAndroid = "file:///storage/emulated/0/";
 
       self.KnockoutTemplateUtils = KnockoutTemplateUtils;
 
-      function querySuccess(tx, results) {
-        var len = results.rows.length;
-        for (var i = 0; i < len; i++) {
-          //console.log(results.rows.item(i).cuentaPeso);
+      function procesarParametros(transaccion, resultados) {
+        var numFilas = resultados.rows.length;
+        for (var indiceFila = 0; indiceFila < numFilas; indiceFila++) {          
+          if(resultados.rows.item(indiceFila).nombre === "desconectada") {
+            oj.gOfflineMode(resultados.rows.item(indiceFila).valor === "si");
+          } else if(resultados.rows.item(indiceFila).nombre === "servidor") {
+            oj.gWSUrl(resultados.rows.item(indiceFila).valor +"/SISVANWS/rest/wls/1.0/");
+          }
         }
       }
 
-      function errorCB(err) {
-        console.log("Error processing SQL: " + err.code);
+      function manejarErrores(error) {
+        alert("Error durante la inicialización, intente reiniciando la aplicación, si la falla persiste contecte al soporte técnico");
+        console.log("Error en la base de datos: " + error.message);
       }
 
-      var db = null;
       document.addEventListener("deviceready", function(){
-          db = window.sqlitePlugin.openDatabase({name: "sve-base-datos.db", location: 'default', createFromLocation: 1});          
-          db.transaction(function(tx) {
-            tx.executeSql("SELECT COUNT(*) as cuentaPeso from percentiles_oms_peso",
-            [], querySuccess, errorCB);
-              //tx.executeSql("CREATE TABLE IF NOT EXISTS TEST (name text primary key)");              
-          }, function(err){
-              alert("An error occurred while initializing the app");
+          oj.gConexionDB(window.sqlitePlugin.openDatabase({name: "sve-base-datos.db", location: 'default', createFromLocation: 1}));          
+          oj.gConexionDB().transaction(function(transaccion) {
+            transaccion.executeSql("SELECT * from parametros",
+            [], procesarParametros, manejarErrores);            
+          }, function(error){
+              alert("Error durante la inicialización, intente reiniciando la aplicación, si la falla persiste contecte al soporte técnico.");
+              console.log("Error en la base de datos: " + error.message);
           });
+          
       }, false);
 
       // Handle announcements sent when pages change, for Accessibility.

@@ -165,6 +165,56 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
         this.orientationValue = ko.observable('vertical');
         this.dataProvider = new oj.ArrayDataProvider(JSON.parse(mediciones), { keyAttributes: 'id' });
         this.datosEstatura = new oj.ArrayDataProvider(JSON.parse(mediciones), { keyAttributes: 'id' });
+      }      
+
+      function manejarErrores(error) {
+        alert("Error durante la descarga de datos escolares, intente nuevamente o reinicie la aplicación.");
+        console.log("Error en la base de datos: " + JSON.stringify(error));
+      }
+
+      function procesarGrupos(transaccion, resultados) {
+        var numFilas = resultados.rows.length;
+        var gruposBD = [];
+        gruposBD.push({ value: -1, label: "NO SELECCIONADA" });
+        
+        for (var indiceFila = 0; indiceFila < numFilas; indiceFila++) {
+          var hoy = new Date();
+          var fechaIngreso = new Date('08/01/' + resultados.rows.item(indiceFila).anio_ingreso);
+          var diferencia = (((hoy.getFullYear() - fechaIngreso.getFullYear()) * 12) + (hoy.getMonth() - fechaIngreso.getMonth()))/12;
+          var grado = Math.ceil(diferencia);;
+          var grupoBD = {};
+          grupoBD.value = resultados.rows.item(indiceFila).id_grupo;
+          grupoBD.label = grado + " " + resultados.rows.item(indiceFila).letra;
+          gruposBD.push(grupoBD);
+        }
+        
+        self.origenDatosGrupos(new oj.ArrayDataProvider(gruposBD, { keyAttributes: 'value' }));
+        self.nuevoGrupoAlumno(-1);
+        self.nuevoEscuelaAlumno(-1);
+      }
+
+      function procesarEscuela(transaccion, resultados) {
+        var numFilas = resultados.rows.length;
+        var escuelasBD = [];
+        escuelasBD.push({value:-1,label:"NO SELECCIONADA"});
+
+        for (var indiceFila = 0; indiceFila < numFilas; indiceFila++) {
+          var escuelaDB = {};
+          escuelaDB.value = resultados.rows.item(indiceFila).id_escuela;
+          escuelaDB.label = resultados.rows.item(indiceFila).nombre;
+          escuelasBD.push(escuelaDB);   
+        }
+
+        self.origenDatosEscuelas(new oj.ArrayDataProvider(escuelasBD, { keyAttributes: 'value' }));
+
+        var consultaGrupos = "SELECT * FROM grupos";
+        oj.gConexionDB().transaction(function (transaccion) {
+          transaccion.executeSql(consultaGrupos,
+            [], procesarGrupos, manejarErrores);
+        }, function (error) {
+          alert("Error durante la descarga de datos escolares, intente nuevamente o reinicie la aplicación.");
+          console.log("Error en la base de datos: " + JSON.stringify(error));
+        });
       }
 
       var peticionGrupos = new XMLHttpRequest();
@@ -183,7 +233,7 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
                 var gruposEscuela = $.extend([], grupos[Object.keys(grupos)[0]]);
                 gruposEscuela.splice(0, 0, { value: -1, label: "NO SELECCIONADO" });
                 self.origenDatosGrupos(new oj.ArrayDataProvider(gruposEscuela, { keyAttributes: 'value' }));
-                self.nuevoGrupoAlumno(null);
+                self.nuevoGrupoAlumno(-1);
                 self.nuevoEscuelaAlumno(null);
               }
             }
@@ -191,27 +241,38 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
         }
       };      
 
-      $.ajax({
-        type: "GET",
-        contentType: "text/plain; charset=utf-8",
-        url: oj.gWSUrl() + "obtenerEscuelas",
-        dataType: "text",
-        async: false,
-        success: function (data) {
-          json = JSON.parse(data);
-          if (json.hasOwnProperty("error")) {
-            alert('No se encontro ninguna escuela');
-            return;
-          } else {
-            json.escuelas.splice(0, 0, {value:-1,label:"NO SELECCIONADA"});
-            self.origenDatosEscuelas(new oj.ArrayDataProvider(json.escuelas));
-            peticionGrupos.send();
+      if(!oj.gOfflineMode()) {
+        $.ajax({
+          type: "GET",
+          contentType: "text/plain; charset=utf-8",
+          url: oj.gWSUrl() + "obtenerEscuelas",
+          dataType: "text",
+          async: false,
+          success: function (data) {
+            json = JSON.parse(data);
+            if (json.hasOwnProperty("error")) {
+              alert('No se encontro ninguna escuela');
+              return;
+            } else {
+              json.escuelas.splice(0, 0, { value: -1, label: "NO SELECCIONADA" });
+              self.origenDatosEscuelas(new oj.ArrayDataProvider(json.escuelas));   
+              peticionGrupos.send();
+            }
           }
-        }
-      }).fail(function () {
-        alert("Error en el servidor, favor de comunicarse con el administrador.");
-        return;
-      });
+        }).fail(function () {
+          alert("Error en el servidor, favor de comunicarse con el administrador.");
+          return;
+        });
+      } else {
+        var consultaDesconexion = "SELECT * FROM escuelas";
+        oj.gConexionDB().transaction(function (transaccion) {
+          transaccion.executeSql(consultaDesconexion,
+            [], procesarEscuela, manejarErrores);
+        }, function (error) {
+          alert("Error durante la descarga de datos escolares, intente nuevamente o reinicie la aplicación.");
+          console.log("Error en la base de datos: " + JSON.stringify(error));
+        });        
+      }
 
       // Header Config
       self.headerConfig = ko.observable({ 'view': [], 'viewModel': null });
@@ -220,7 +281,7 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
       });
 
       self.escuelaSeleccionada = function (event) {
-        var id_escuela = event['detail'].value.toString();
+        var id_escuela = event['detail'].value === null ? "-1" : event['detail'].value.toString();
         if (id_escuela !== "" && Object.keys(grupos).length > 0) {
           var gruposEscuela;
           if (grupos.hasOwnProperty(id_escuela)) {
@@ -230,7 +291,7 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
             gruposEscuela = [{ value: -1, label: "NO SELECCIONADO" }];
           }
           self.origenDatosGrupos(new oj.ArrayDataProvider(gruposEscuela, { keyAttributes: 'value' }));
-          self.nuevoGrupoAlumno(null);
+          self.nuevoGrupoAlumno(-1);
         }
       };
 
@@ -302,7 +363,7 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
                   listaMediciones.remove();
                 }
               } else {
-                alert('Error interno en el servidor, por favo contacta al administrador.');
+                alert('Error interno en el servidor, por favor contacta al administrador.');
               }
               return;
             } else {
@@ -518,6 +579,131 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
         document.getElementById('dialogoSincronizacion').open();
       };
 
+      function notificarConexion(transaccion, resultados) { 
+        oj.gOfflineMode(false);
+      }
+
+      function notificarDesconexion(transaccion, resultados) {
+        document.getElementById('dialogoDescarga').close();
+      }
+
+      self.actualizarBanderDesconexion = function (valor) {
+        var consultaDesconexion = "UPDATE parametros SET valor = ? WHERE nombre = 'desconectada'";
+        oj.gConexionDB().transaction(function (transaccion) {
+          transaccion.executeSql(consultaDesconexion,
+            [valor], valor === "si" ? notificarDesconexion : notificarConexion, manejarErrores);
+        }, function (error) {
+          alert("Error durante la descarga de datos escolares, intente nuevamente o reinicie la aplicación.");
+          console.log("Error en la base de datos: " + JSON.stringify(error));
+        });
+      };
+
+      function reportarLimpiezaEscuelas(transaccion, resultados) {
+        
+      }
+
+      function reportarDescargaGrupos(transaccion, resultados) {
+        console.log("Descarga de grupos terminada.");
+      }
+
+      function reportarDescargaEscuela(transaccion, resultados) {
+        console.log("Descarga de escuela terminada.");
+        var peticionGrupos = new XMLHttpRequest();
+        peticionGrupos.open("GET", oj.gWSUrl() + "obtenerDatosGrupos/" + self.nuevoEscuelaAlumno(), true);
+        peticionGrupos.onreadystatechange = function () {
+          if (this.readyState === 4) {
+            if (this.status === 200) {
+              var json = JSON.parse(this.responseText);
+              Object.entries(json.grupos).forEach(([indiceGrupo, grupo]) => {
+                if(grupo.grado !== "EGRESADO") {
+                  var consultaInsertarGrupo = "INSERT INTO grupos(id_grupo, letra, anio_ingreso, id_escuela) VALUES(?,?,?,?)";
+                  var parametros = [
+                    grupo.id_grupo,
+                    grupo.letra,   
+                    grupo.anio_ingreso,
+                    self.nuevoEscuelaAlumno()
+                  ];
+                  oj.gConexionDB().transaction(function (transaccion) {
+                    transaccion.executeSql(consultaInsertarGrupo,
+                      parametros, reportarDescargaGrupos, manejarErrores);
+                  }, function (error) {
+                    alert("Error durante la descarga de datos escolares, intente nuevamente o reinicie la aplicación.");
+                    console.log("Error en la base de datos: " + error.message);
+                    return;
+                  });  
+                }              
+              });
+            }            
+            document.getElementById("dialogoCargando").close();
+          }
+        };
+        peticionGrupos.send();
+      }
+
+      self.descargarEscuela = function() {
+        document.getElementById("dialogoCargando").open();
+
+        var consultaEliminarGrupos = "DELETE FROM grupos";
+        oj.gConexionDB().transaction(function (transaccion) {
+          transaccion.executeSql(consultaEliminarGrupos,
+            [], reportarLimpiezaEscuelas, manejarErrores);
+        }, function (error) {
+          alert("Error durante la descarga de datos escolares, intente nuevamente o reinicie la aplicación.");
+          console.log("Error en la base de datos: " + JSON.stringify(error));
+          return;
+        });
+
+        var consultaEliminarEscuelas = "DELETE FROM escuelas";
+        oj.gConexionDB().transaction(function (transaccion) {
+          transaccion.executeSql(consultaEliminarEscuelas,
+            [], reportarLimpiezaEscuelas, manejarErrores);
+        }, function (error) {
+          alert("Error durante la descarga de datos escolares, intente nuevamente o reinicie la aplicación.");
+          console.log("Error en la base de datos: " + JSON.stringify(error));
+          return;
+        });      
+
+        var peticionEscuelas = new XMLHttpRequest();
+        peticionEscuelas.open("GET", oj.gWSUrl() + "obtenerDatosEscuelas", true);
+        peticionEscuelas.onreadystatechange = function () {
+          if (this.readyState === 4) {
+            if (this.status === 200) {
+              var json = JSON.parse(this.responseText);
+              Object.entries(json.escuelas).some(([indiceEscuela, escuela]) => {
+                if(escuela.id_escuela === self.nuevoEscuelaAlumno()) {
+                  var consultaInsertarEscuela = "INSERT INTO escuelas VALUES(?,?,?,?,?,?,?,?,?)";
+                  var parametros = [
+                    escuela.id_escuela,
+                    escuela.clave_sep,
+                    escuela.nombre,
+                    escuela.direccion,
+                    escuela.colonia,
+                    escuela.codigo_postal,
+                    escuela.telefono,
+                    escuela.municipio,
+                    escuela.estado
+                  ];
+                  oj.gConexionDB().transaction(function (transaccion) {
+                    transaccion.executeSql(consultaInsertarEscuela,
+                      parametros, reportarDescargaEscuela, manejarErrores);
+                  }, function (error) {
+                    alert("Error durante la descarga de datos escolares, intente nuevamente o reinicie la aplicación.");
+                    console.log("Error en la base de datos: " + error.message);
+                    return;
+                  });
+                  return true;
+                }
+              });
+              self.actualizarBanderDesconexion("si");
+            } else {
+              self.evitarCiclo(true);
+              oj.gOfflineMode(false);
+            }
+          }
+        };
+        peticionEscuelas.send();
+      };
+
       self.revisarDescarga = function() {
         if(self.evitarCiclo() === true) {
           self.evitarCiclo(false);
@@ -526,13 +712,13 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
 
         if(oj.gOfflineMode() === true) {
           if(self.nuevoEscuelaAlumno() === null || self.nuevoEscuelaAlumno() === undefined || self.nuevoEscuelaAlumno() === -1) { 
-            alert("Seleccions una escuela");
+            alert("Selecciona una escuela");
             return;
           } 
 
           document.getElementById('dialogoDescarga').open();
         } else {
-          
+          self.actualizarBanderDesconexion("no");
         }
       };
 
@@ -611,7 +797,7 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
         self.triceps("");
         self.subEscapular("");
         self.pliegueCuello("");
-        self.nuevoGrupoAlumno(null);
+        self.nuevoGrupoAlumno(-1);
         document.getElementById('dialogoNuevaMedicion').close();
       };
 
@@ -679,7 +865,7 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
         self.sexoNuevoAlumno("femenino");
         self.fNacimientoNuevoAlumno("");
         self.nuevoEscuelaAlumno(null);
-        self.nuevoGrupoAlumno(null);
+        self.nuevoGrupoAlumno(-1);
         self.idDeshabilitado(false);
         if (Object.keys(grupos).length > 0) {
           self.origenDatosGrupos(new oj.ArrayDataProvider([{NoData:""}]));
