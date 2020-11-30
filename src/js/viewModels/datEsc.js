@@ -245,7 +245,7 @@ define(['knockout', 'jquery', 'appController', 'ojs/ojmodule-element-utils', 'ac
           botonAgregarGrupo.setAttribute("on-oj-action", "[[crearNuevoGrupo]]");
           var iconoBotonAGrupo = document.createElement("span");
           iconoBotonAGrupo.setAttribute("slot", "startIcon");
-          iconoBotonAGrupo.classList.add("oj-ux-ico-add-create-page");
+          iconoBotonAGrupo.classList.add("oj-ux-ico-file-add");
           botonAgregarGrupo.appendChild(iconoBotonAGrupo);
 
           var botonEditarGrupo = document.createElement("oj-button");
@@ -257,6 +257,14 @@ define(['knockout', 'jquery', 'appController', 'ojs/ojmodule-element-utils', 'ac
 
           barraHGrupos.appendChild(botonAgregarGrupo);
           barraHGrupos.appendChild(botonEditarGrupo);
+
+          var botonEliminarGrupo = document.createElement("oj-button");
+          botonEliminarGrupo.setAttribute("display", "icons");
+          var iconoBotonRGrupo = document.createElement("span");
+          iconoBotonRGrupo.setAttribute("slot", "startIcon");
+          iconoBotonRGrupo.classList.add("oj-ux-ico-file-remove");
+          botonEliminarGrupo.appendChild(iconoBotonRGrupo);
+          barraHGrupos.appendChild(botonEliminarGrupo);
 
           var listaVistaGrupos = document.createElement('oj-list-view');
           listaVistaGrupos.setAttribute("selection-mode", "single");

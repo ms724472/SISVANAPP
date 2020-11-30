@@ -35,26 +35,33 @@
               <span slot='startIcon' class='oj-ux-ico-contact-edit'></span>
               Editar alumno
             </oj-button>
+
+            <oj-button id='eliminar-alumno' display='icons' :style.display="[[oj.gModoDependiente() ? 'none' : 'inline-flex']]">
+              <span slot='startIcon' class='oj-ux-ico-contact-minus'></span>
+              Eliminar alumno
+            </oj-button>
           
-            <span role="separator" aria-orientation="vertical" class="oj-toolbar-separator"></span>
-          
-            <oj-button id='agregar-alumno' display='icons' on-oj-action="[[nuevaMedicion]]">
-              <span slot='startIcon' class='oj-ux-ico-add-create-page'></span>
+            <oj-button id='agregar-medicion' display='icons' on-oj-action="[[nuevaMedicion]]">
+              <span slot='startIcon' class='oj-ux-ico-file-add'></span>
               Agregar medici&oacute;n
             </oj-button>
-            <oj-button id='editar-alumno' display='icons' on-oj-action="[[editarMedicion]]">
+
+            <oj-button id='editar-medicion' display='icons' on-oj-action="[[editarMedicion]]">
               <span slot='startIcon' class='oj-ux-ico-add-edit-page'></span>
               Editar medici&oacute;n
             </oj-button>
-          
-            <span role="separator" aria-orientation="vertical" class="oj-toolbar-separator"></span>
+
+            <oj-button id='eliminar-medicion' display='icons' :style.display="[[oj.gModoDependiente() ? 'none' : 'inline-flex']]">
+              <span slot='startIcon' class='oj-ux-ico-file-remove'></span>
+              Eliminar medici&oacute;n
+            </oj-button>
           
             <oj-button id='editar-alumno' display='icons'>
               <span slot='startIcon' class='oj-ux-ico-file-excel'></span>
               Descargar informaci&oacute;n
             </oj-button>
 
-            <oj-button id='editar-alumno' display='icons' on-oj-action="[[sincronizarDatos]]">
+            <oj-button id='editar-alumno' display='icons' :style.display="[[oj.gModoDependiente() ? 'inline-flex' : 'none' ]]" on-oj-action="[[sincronizarDatos]]">
               <span slot='startIcon' class='oj-ux-ico-sync'></span>
               Sincronizaci&oacute;n
             </oj-button>
@@ -230,7 +237,7 @@
     <oj-button id="botonAgregarAlumno" on-oj-action="[[seleccionarAlumno]]">Seleccionar</oj-button>
   </div>
 </oj-dialog>
-<oj-dialog style="display:none" id="dialogoCargando" cancel-behavior="none" dialog-title="Agregando datos...">
+<oj-dialog style="display:none" id="dialogoCargando" cancel-behavior="none" dialog-title="Cargando...">
   <div slot="body">
     <p>Cargando la informaci&oacute;n espere...</p>
     <oj-progress class="oj-progress-bar-embedded" id="progressbar" value="-1"></oj-progress>
@@ -244,7 +251,7 @@
         <div class="oj-flex">
           <oj-flex-item style="width: 100%;">
             <oj-label for="nuevoIdAlumno" show-required>Identificador:</oj-label>
-            <oj-input-text class="campo" id="nuevoIdAlumno" value="{{idNuevoAlumno}}" disabled="[[idDeshabilitado]]" validators="[[validadorNumerico]]" 
+            <oj-input-text class="campo" id="nuevoIdAlumno" value="{{idNuevoAlumno}}" disabled="[[idDeshabilitado]]" virtual-keyboard="number" validators="[[validadorNumerico]]" 
             required translations='{
                 "required": {
                   "messageSummary": "Valor requerido.",  

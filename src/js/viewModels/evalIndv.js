@@ -61,6 +61,7 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
       self.medidaVacia = ko.observable(true);
       self.medianaCalculada = ko.observable("");
       self.medidaACalcular = ko.observable("");
+      self.limiteAlumno = ko.observable(0);
 
       self.tituloIMC = ko.pureComputed(function () {
         return {
@@ -155,7 +156,7 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
           options: {
             min: 1,
             messageSummary: 'Grupo invalido',
-            messageDetail: 'Seleccione un grupo.'
+            messageDetail: 'Selecciona un grupo.'
           }
         }];
       });
@@ -177,7 +178,18 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
         var gruposBD = [];
         gruposBD.push({ value: -1, label: "NO SELECCIONADA" });
         
+        var gruposEscuelaActual = [];
+        var idEscuelaActual;
+
         for (var indiceFila = 0; indiceFila < numFilas; indiceFila++) {
+          if(indiceFila === 0) {
+            idEscuelaActual = resultados.rows.item(indiceFila).id_escuela;
+          } else if(resultados.rows.item(indiceFila).id_escuela !== idEscuelaActual) {
+            grupos[idEscuelaActual.toString()] = gruposEscuelaActual;
+            gruposEscuelaActual = [];
+            idEscuelaActual = resultados.rows.item(indiceFila).id_escuela;
+          }
+          
           var hoy = new Date();
           var fechaIngreso = new Date('08/01/' + resultados.rows.item(indiceFila).anio_ingreso);
           var diferencia = (((hoy.getFullYear() - fechaIngreso.getFullYear()) * 12) + (hoy.getMonth() - fechaIngreso.getMonth()))/12;
@@ -185,7 +197,11 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
           var grupoBD = {};
           grupoBD.value = resultados.rows.item(indiceFila).id_grupo;
           grupoBD.label = grado + " " + resultados.rows.item(indiceFila).letra;
-          gruposBD.push(grupoBD);
+          gruposEscuelaActual.push(grupoBD);
+
+          if(indiceFila === numFilas-2) {
+            grupos[idEscuelaActual.toString()] = gruposEscuelaActual;
+          }
         }
         
         self.origenDatosGrupos(new oj.ArrayDataProvider(gruposBD, { keyAttributes: 'value' }));
@@ -213,7 +229,7 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
             [], procesarGrupos, manejarErrores);
         }, function (error) {
           alert("Error durante la descarga de datos escolares, intente nuevamente o reinicie la aplicación.");
-          console.log("Error en la base de datos: " + JSON.stringify(error));
+          console.log("Error en la base de datos: " + error.message);
         });
       }
 
@@ -295,169 +311,301 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
         }
       };
 
+      self.procesarDatos = function(datos) {
+        var campos = [];
+        var indice = 0;
+        for (var llave in datos) {
+          var campo = {};
+          campo["id"] = indice;
+          switch (llave) {
+            case "apellido_p":
+              campo["campo"] = "Apellido Paterno";
+              break;
+            case "apellido_m":
+              campo["campo"] = "Apellido Materno";
+              break;
+            case "fecha_nac":
+              campo["campo"] = "Fecha de nacimiento";
+              break;
+            case "letra":
+              campo["campo"] = "Grupo";
+              break;
+            default:
+              campo["campo"] = llave[0].toUpperCase() + llave.slice(1).replace("_", " ");
+              break;
+          }
+
+          campo["valor"] = datos[llave];
+
+          if(llave === "nombre") {
+            campo["valor"] = campo["valor"].replace("-E", "");
+          }
+                    
+          if(!llave.includes("id_")) {
+            campos.push(campo);
+            indice++;
+          }
+        }
+        self.datosAlumno(new oj.ArrayDataProvider(campos, { keyAttributes: 'id' }));
+        self.colorIndicador(datos.sexo === "FEMENINO" ? "#E4007C" : "#237BB1");
+        datosAlumnoActual = datos; 
+      };
+
+      self.procesarMediciones = function(jsonMediciones) {
+        var listaMediciones = document.getElementById("listaMediciones");
+        if (listaMediciones !== undefined && listaMediciones !== null) {
+          listaMediciones.remove();
+        }
+        var contenedor = document.getElementById("contenedorMediciones");
+        var accordion = document.createElement('oj-accordion');
+        accordion.setAttribute("id", "listaMediciones");
+        medicionesAlumnoActual = jsonMediciones;
+
+        jsonMediciones.forEach(medicion => {
+          var colapsableMedicion = document.createElement('oj-collapsible');                
+          var fechaMedicion = document.createElement('h3');
+          fechaMedicion.setAttribute('slot', 'header');
+
+          var listaVista = document.createElement('oj-list-view');
+          var lista = document.createElement('ul');
+
+          for (var llave in medicion) {
+            if (llave === "id_alumno" || llave.includes("id")) {
+              continue;
+            } else if (llave === "fecha") {
+              fechaMedicion.innerText = medicion[llave];
+              continue;
+            }
+            
+            var linea = document.createElement('li');
+            var contenido = document.createElement('oj-list-item-layout');
+            var objMedicion = document.createElement('span');
+            if(llave === "diagnostico_peso") {
+              objMedicion.innerText = medicion[llave].replace("-E", "");
+            } else {
+              objMedicion.innerText = medicion[llave];
+            }
+
+            var campo = document.createElement('span');
+
+            switch (llave) {
+              case "masa":
+                campo.innerText = "Peso";
+                break;
+              case "imc":
+                campo.innerText = "Indice de Masa Corporal";
+                break;
+                case "estatura":
+                  campo.innerText = "Talla";
+                  break;
+              case "perimetro_cuello":
+                campo.innerText = "Perimetro del cuello";
+                break;
+              case "pliegue_cuello":
+                campo.innerText = "Pliegue del cuello";
+                break;
+              case "subescapula":
+                campo.innerText = "Subescapular";
+                break;
+              case "diagnostico_peso":
+              case "diagnostico_talla":
+              case "diagnostico_imc":
+                var nombreMedicion = llave.split("_")[1];
+                campo.innerText = "Diagnóstico " + (nombreMedicion.includes("imc") ? "IMC" : (nombreMedicion[0].toUpperCase() + nombreMedicion.slice(1)));
+                break;
+              case "z_peso":
+              case "z_talla":
+              case "z_imc":
+                var nombreMedicion = llave.split("_")[1];
+                campo.innerText = "Puntaje Z " + (nombreMedicion.includes("imc") ? "IMC" : (nombreMedicion[0].toUpperCase() + nombreMedicion.slice(1)));
+                break;
+              default:                    
+                campo.innerText = llave[0].toUpperCase() + llave.slice(1).replace("_", " ");
+                break;
+            }
+            campo.classList.add("oj-text-color-secondary");
+            campo.setAttribute('slot', 'secondary');
+
+            contenido.appendChild(objMedicion);
+            contenido.appendChild(campo);
+            linea.appendChild(contenido);
+            lista.appendChild(linea);
+          }
+
+          listaVista.appendChild(lista);
+          colapsableMedicion.appendChild(fechaMedicion);
+          colapsableMedicion.appendChild(listaVista);
+          accordion.appendChild(colapsableMedicion);
+        });
+        
+        contenedor.appendChild(accordion);
+        ko.applyBindings(self, accordion);
+      };
+
+      self.diferenciaMeses = function(fecha1, fecha2, redondearHaciaArriba) {
+        var fechaInicial = fecha1;
+        var fechaFinal = fecha2;
+        var invertida = false;
+        if (fecha1 > fecha2) {
+          fechaInicial = fecha2;
+          fechaFinal = fecha1;
+          invertida = true;
+        }
+
+        var aniosDiferencia = fechaFinal.getFullYear() - fechaInicial.getFullYear();
+        var mesesDiferencia = fechaFinal.getMonth() - fechaInicial.getMonth();
+        var diasDiferencia = fechaFinal.getDate() - fechaInicial.getDate();
+
+        var correcionMeses = 0;
+        if (redondearHaciaArriba === true && diasDiferencia > 0) {
+          correcionMeses = 1;
+        } else if (redondearHaciaArriba !== true && diasDiferencia < 0) {
+          correcionMeses = -1;
+        }
+
+        return (invertida ? -1 : 1) * (aniosDiferencia * 12 + mesesDiferencia + correcionMeses);
+      };
+
+      function procesarMedicionesDB(transaccion, resultados) {
+        var numFilas = resultados.rows.length;
+        var jsonMediciones = [];        
+        for (var indiceFila = 0; indiceFila < numFilas; indiceFila++) {
+          var fila = resultados.rows.item(indiceFila);
+          var compFecha = fila.fecha.split("-");  
+          var compFechaNac = fila.fecha_nac.split("-");  
+          var fechaMedicion = new Date(compFecha[0], compFecha[1], compFecha[2]); 
+          var fechaNac = new Date(compFechaNac[0], compFechaNac[1], compFechaNac[2]); 
+          var meses = self.diferenciaMeses(fechaNac, fechaMedicion, false);
+          var gruposEscuela = grupos[fila.id_escuela.toString()];
+          var grupo = "";
+          gruposEscuela.some(function(grupoActual) {
+            if(grupoActual.value === fila.id_grupo) {
+              grupo = grupoActual.label;
+              return true;
+            }
+          });
+          var medicionActual = {
+            meses: meses,
+            grupo: grupo,
+            fecha: compFecha[2] + "/" + compFecha[1] + "/" + compFecha[0],
+            masa: fila.masa,
+            diagnostico_peso: fila.diagnostico_peso,
+            z_peso: fila.z_peso,
+            estatura: fila.estatura,
+            diagnostico_talla: fila.diagnostico_talla,
+            z_talla: fila.z_talla,
+            imc: fila.imc.toFixed(2),
+            diagnostico_imc: fila.diagnostico_imc,
+            z_imc: fila.z_imc,
+            perimetro_cuello: fila.perimetro_cuello,
+            cintura: fila.cintura,
+            triceps: fila.triceps,
+            subescapula: fila.subescapula,
+            pliegue_cuello: fila.pliegue_cuello
+          };
+          jsonMediciones.push(medicionActual);
+        }
+        self.procesarMediciones(jsonMediciones);
+      }
+
+      function procesarDatosDB(transaccion, resultados) {
+        var numFilas = resultados.rows.length;
+        for (var indiceFila = 0; indiceFila < numFilas; indiceFila++) {
+          var fila = resultados.rows.item(indiceFila);
+          var compFecha = fila.fecha_nac.split("-");
+          var gruposEscuela = grupos[fila.id_escuela.toString()];
+          var grado = "";
+          var grupo = "";
+          gruposEscuela.some(function(grupoActual) {
+            if(grupoActual.value === fila.id_grupo) {
+              var compGrupo = grupoActual.label.split(" ");     
+              grado = compGrupo[0];
+              grupo = compGrupo[1];
+              return true;
+            }
+          });
+          var datosJSON = {
+            nombre: fila.nombre,
+            apellido_p: fila.apellido_p,
+            apellido_m: fila.apellido_m,
+            sexo: fila.sexo.toUpperCase(),
+            fecha_nac: compFecha[2] + "/" + compFecha[1] + "/" + compFecha[0],
+            escuela: self.origenDatosEscuelas().data[fila.id_escuela].label,
+            grado: grado,
+            grupo: grupo
+          };
+          self.procesarDatos(datosJSON);
+        }
+
+        oj.gConexionDB().transaction(function(transaccion) {
+          transaccion.executeSql("SELECT datos.*, grupos.id_escuela, alumnos.fecha_nac FROM datos INNER JOIN alumnos ON datos.id_alumno = alumnos.id_alumno INNER JOIN grupos ON alumnos.id_grupo = grupos.id_grupo WHERE datos.id_alumno = ?",
+          [self.idAlumno()], procesarMedicionesDB, manejarErrores);            
+        }, function(error){
+            alert("Error durante la inicialización, intente reiniciando la aplicación, si la falla persiste contecte al soporte técnico.");
+            console.log("Error en la base de datos: " + error.message);
+        });
+      }
+
       // Below are a set of the ViewModel methods invoked by the oj-module component.
       // Please reference the oj-module jsDoc for additional information.
       self.obtenerInfo = function () {
-        $.ajax({
-          type: "GET",
-          contentType: "text/plain; charset=utf-8",
-          url: oj.gWSUrl() + "alumnos/obtenerDatos/" + self.idAlumno(),
-          dataType: "text",
-          async: false,
-          success: function (data) {
-            json = JSON.parse(data);
-            if (json.hasOwnProperty("error") && json.error !== "No hay datos.") {
-              alert('Error de autenticación, por favor revisa tus datos.');
-              return;
-            } else {
-              var campos = [];
-              var indice = 0;
-              for (var llave in json.datos[0]) {
-                var campo = {};
-                campo["id"] = indice;
-                switch (llave) {
-                  case "apellido_p":
-                    campo["campo"] = "Apellido Paterno";
-                    break;
-                  case "apellido_m":
-                    campo["campo"] = "Apellido Materno";
-                    break;
-                  case "fecha_nac":
-                    campo["campo"] = "Fecha de nacimiento";
-                    break;
-                  case "letra":
-                    campo["campo"] = "Grupo";
-                    break;
-                  default:
-                    campo["campo"] = llave[0].toUpperCase() + llave.slice(1).replace("_", " ");
-                    break;
-                }
-                campo["valor"] = json.datos[0][llave];
-                if(!llave.includes("id")) {
-                  campos.push(campo);
-                  indice++;
-                }
-              }
-              self.datosAlumno(new oj.ArrayDataProvider(campos, { keyAttributes: 'id' }));
-              self.colorIndicador(json.datos[0].sexo === "FEMENINO" ? "#E4007C" : "#237BB1");
-              datosAlumnoActual = json.datos[0]; 
-            }
-          }
-        }).fail(function () {
-          alert("Error en el servidor, favor de comunicarse con el administrador.");
-          return;
-        });
-
-        $.ajax({
-          type: "GET",
-          contentType: "text/plain; charset=utf-8",
-          url: oj.gWSUrl() + "alumnos/obtenerMediciones/" + self.idAlumno(),
-          dataType: "text",
-          async: false,
-          success: function (data) {
-            json = JSON.parse(data);
-            if (json.hasOwnProperty("error")) {
-              if(json.error === "No hay datos.") {
-                var listaMediciones = document.getElementById("listaMediciones");
-                if(listaMediciones !== undefined && listaMediciones !== null) {
-                  listaMediciones.remove();
-                }
+        if(oj.gOfflineMode() !== true) {        
+          $.ajax({
+            type: "GET",
+            contentType: "text/plain; charset=utf-8",
+            url: oj.gWSUrl() + "alumnos/obtenerDatos/" + self.idAlumno(),
+            dataType: "text",
+            async: false,
+            success: function (data) {
+              json = JSON.parse(data);
+              if (json.hasOwnProperty("error") && json.error !== "No hay datos.") {
+                alert('Error de autenticación, por favor revisa tus datos.');
+                return;
               } else {
-                alert('Error interno en el servidor, por favor contacta al administrador.');
+                self.procesarDatos(json.datos[0]);
               }
-              return;
-            } else {
-              var listaMediciones = document.getElementById("listaMediciones");
-              if (listaMediciones !== undefined && listaMediciones !== null) {
-                listaMediciones.remove();
-              }
-              var contenedor = document.getElementById("contenedorMediciones");
-              var accordion = document.createElement('oj-accordion');
-              accordion.setAttribute("id", "listaMediciones");
-              medicionesAlumnoActual = json.mediciones;
-
-              json.mediciones.forEach(medicion => {
-                var colapsableMedicion = document.createElement('oj-collapsible');                
-                var fechaMedicion = document.createElement('h3');
-                fechaMedicion.setAttribute('slot', 'header');
-
-                var listaVista = document.createElement('oj-list-view');
-                var lista = document.createElement('ul');
-
-                for (var llave in medicion) {
-                  if (llave === "id_alumno" || llave.includes("id")) {
-                    continue;
-                  } else if (llave === "fecha") {
-                    fechaMedicion.innerText = medicion[llave];
-                    continue;
-                  }
-                  
-                  var linea = document.createElement('li');
-                  var contenido = document.createElement('oj-list-item-layout');
-                  var objMedicion = document.createElement('span');
-                  objMedicion.innerText = medicion[llave];
-
-                  var campo = document.createElement('span');
-
-                  switch (llave) {
-                    case "masa":
-                      campo.innerText = "Peso";
-                      break;
-                    case "imc":
-                      campo.innerText = "Indice de Masa Corporal";
-                      break;
-                      case "estatura":
-                        campo.innerText = "Talla";
-                        break;
-                    case "perimetro_cuello":
-                      campo.innerText = "Perimetro del cuello";
-                      break;
-                    case "pliegue_cuello":
-                      campo.innerText = "Pliegue del cuello";
-                      break;
-                    case "subescapula":
-                      campo.innerText = "Subescapular";
-                      break;
-                    case "diagnostico_peso":
-                    case "diagnostico_talla":
-                    case "diagnostico_imc":
-                      var nombreMedicion = llave.split("_")[1];
-                      campo.innerText = "Diagnóstico " + (nombreMedicion.includes("imc") ? "IMC" : (nombreMedicion[0].toUpperCase() + nombreMedicion.slice(1)));
-                      break;
-                    case "z_peso":
-                    case "z_talla":
-                    case "z_imc":
-                      var nombreMedicion = llave.split("_")[1];
-                      campo.innerText = "Puntaje Z " + (nombreMedicion.includes("imc") ? "IMC" : (nombreMedicion[0].toUpperCase() + nombreMedicion.slice(1)));
-                      break;
-                    default:                    
-                      campo.innerText = llave[0].toUpperCase() + llave.slice(1).replace("_", " ");
-                      break;
-                  }
-                  campo.classList.add("oj-text-color-secondary");
-                  campo.setAttribute('slot', 'secondary');
-
-                  contenido.appendChild(objMedicion);
-                  contenido.appendChild(campo);
-                  linea.appendChild(contenido);
-                  lista.appendChild(linea);
-                }
-
-                listaVista.appendChild(lista);
-                colapsableMedicion.appendChild(fechaMedicion);
-                colapsableMedicion.appendChild(listaVista);
-                accordion.appendChild(colapsableMedicion);
-              });
-              
-              contenedor.appendChild(accordion);
-              ko.applyBindings(self, accordion);
             }
-          }
-        }).fail(function () {
-          alert("Error en el servidor, favor de comunicarse con el administrador.");
-          return;
-        });
+          }).fail(function () {
+            alert("Error en el servidor, favor de comunicarse con el administrador.");
+            return;
+          });
 
+          $.ajax({
+            type: "GET",
+            contentType: "text/plain; charset=utf-8",
+            url: oj.gWSUrl() + "alumnos/obtenerMediciones/" + self.idAlumno(),
+            dataType: "text",
+            async: false,
+            success: function (data) {
+              json = JSON.parse(data);
+              if (json.hasOwnProperty("error")) {
+                if(json.error === "No hay datos.") {
+                  var listaMediciones = document.getElementById("listaMediciones");
+                  if(listaMediciones !== undefined && listaMediciones !== null) {
+                    listaMediciones.remove();
+                  }
+                } else {
+                  alert('Error interno en el servidor, por favor contacta al administrador.');
+                }
+                return;
+              } else {
+                self.procesarMediciones(json.mediciones);
+              }
+            }
+          }).fail(function () {
+            alert("Error en el servidor, favor de comunicarse con el administrador.");
+            return;
+          });
+      } else {
+        oj.gConexionDB().transaction(function(transaccion) {
+          transaccion.executeSql("SELECT alumnos.*, grupos.id_escuela FROM alumnos INNER JOIN grupos ON alumnos.id_grupo = grupos.id_grupo WHERE id_alumno = ?",
+          [self.idAlumno()], procesarDatosDB, manejarErrores);            
+        }, function(error){
+            alert("Error durante la inicialización, intente reiniciando la aplicación, si la falla persiste contecte al soporte técnico.");
+            console.log("Error en la base de datos: " + error.message);
+        });
+      }
+        
         var mediciones = ["imc", "talla", "peso"];
         mediciones.forEach(function callback(medicionActual) {
           var peticionHistotico = new XMLHttpRequest();
@@ -598,23 +746,169 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
         });
       };
 
-      function reportarLimpiezaEscuelas(transaccion, resultados) {
+      function reportarLimpiezaDatos(transaccion, resultados) {
         
+      }
+      
+      function reportarDescargaAlumno(transaccion, resultados) {
+
+      }
+
+      function reportarDescargaMedicion(transaccion, resultados) {
+
       }
 
       function reportarDescargaGrupos(transaccion, resultados) {
-        console.log("Descarga de grupos terminada.");
+        console.log("Descarga de grupos terminada.");    
+        self.limiteAlumno(self.limiteAlumno()-1);
+        if(self.limiteAlumno() === 0) {
+          var peticionAlumnos = new XMLHttpRequest();
+          peticionAlumnos.open("GET", oj.gWSUrl() + "escuelas/obtenerAlumnos/" + self.nuevoEscuelaAlumno(), true);
+          peticionAlumnos.onreadystatechange = function () {
+            if (this.readyState === 4) {
+              if (this.status === 200) {
+                var json = JSON.parse(this.responseText);
+                self.nuevoEscuelaAlumno(-1);
+                Object.entries(json.alumnos).forEach(([indiceAlumno, alumno]) => {
+                  var consultaInsertarAlumno = "INSERT INTO alumnos(id_alumno, nombre, apellido_p, apellido_m, sexo, fecha_nac, id_grupo) VALUES(?,?,?,?,?,?,?)";
+                  var fechaComp = alumno.datos.fecha_nac.split("/");
+                  var fechaNacimiento = fechaComp[2] + "-" + fechaComp[1] + "-" + fechaComp[0];
+                  var parametros = [
+                    alumno.id_alumno,
+                    alumno.datos.nombre + "-E",   
+                    alumno.datos.apellido_p, 
+                    alumno.datos.apellido_m, 
+                    alumno.datos.sexo.toLowerCase(),
+                    fechaNacimiento,
+                    alumno.datos.id_grupo
+                  ];
+                  oj.gConexionDB().transaction(function (transaccion) {
+                    transaccion.executeSql(consultaInsertarAlumno,
+                      parametros, reportarDescargaAlumno, manejarErrores);
+                  }, function (error) {
+                    alert("Error durante la descarga de datos escolares, intente nuevamente o reinicie la aplicación.");
+                    console.log("Error en la base de datos: " + error.message);
+                    return;
+                  });
+
+                  Object.entries(alumno.mediciones).forEach(([indiceMedicion, medicion]) => {
+                    var consultaInsertarMedicion = "INSERT INTO datos(id_alumno, id_grupo, fecha, masa, diagnostico_peso, z_peso, estatura,  diagnostico_talla, z_talla, diagnostico_imc, z_imc, perimetro_cuello, cintura, triceps, subescapula, pliegue_cuello) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+                    var fechaComp = medicion.fecha.split("/");
+                    var fecha = fechaComp[2] + "-" + fechaComp[1] + "-" + fechaComp[0];
+                    var parametros = [
+                      medicion.id_alumno,                      
+                      medicion.id_grupo,                    
+                      fecha,
+                      medicion.masa,
+                      medicion.diagnostico_peso + "-E",
+                      medicion.z_peso,
+                      medicion.estatura,
+                      medicion.diagnostico_talla,
+                      medicion.z_talla,
+                      medicion.diagnostico_imc,
+                      medicion.z_imc,
+                      medicion.perimetro_cuello,
+                      medicion.cintura,
+                      medicion.triceps,
+                      medicion.subescapula,
+                      medicion.pliegue_cuello
+                    ];
+                    oj.gConexionDB().transaction(function (transaccion) {
+                      transaccion.executeSql(consultaInsertarMedicion,
+                        parametros, reportarDescargaMedicion, manejarErrores);
+                    }, function (error) {
+                      alert("Error durante la descarga de datos escolares, intente nuevamente o reinicie la aplicación.");
+                      console.log("Error en la base de datos: " + error.message);
+                      return;
+                    });
+                  });
+                });
+              }
+            }
+          }
+          peticionAlumnos.send();
+        } 
       }
 
+      self.descargarAlumnos = function() {
+        var peticionAlumnos = new XMLHttpRequest();
+          peticionAlumnos.open("GET", oj.gWSUrl() + "escuelas/obtenerAlumnos/" + self.nuevoEscuelaAlumno(), true);
+          peticionAlumnos.onreadystatechange = function () {
+            if (this.readyState === 4) {
+              if (this.status === 200) {
+                var json = JSON.parse(this.responseText);
+                Object.entries(json.alumnos).forEach(([indiceAlumno, alumno]) => {
+                  var consultaInsertarAlumno = "INSERT INTO alumnos(id_alumno, nombre, apellido_p, apellido_m, sexo, fecha_nac, id_grupo) VALUES(?,?,?,?,?,?,?)";
+                  var fechaComp = alumno.datos.fecha_nac.split("/");
+                  var fechaNacimiento = fechaComp[2] + "-" + fechaComp[1] + "-" + fechaComp[0];
+                  var parametros = [
+                    alumno.id_alumno,
+                    alumno.datos.nombre + "-E",   
+                    alumno.datos.apellido_p, 
+                    alumno.datos.apellido_m, 
+                    alumno.datos.sexo.toLowerCase(),
+                    fechaNacimiento,
+                    alumno.datos.id_grupo
+                  ];
+                  oj.gConexionDB().transaction(function (transaccion) {
+                    transaccion.executeSql(consultaInsertarAlumno,
+                      parametros, reportarDescargaAlumno, manejarErrores);
+                  }, function (error) {
+                    alert("Error durante la descarga de datos escolares, intente nuevamente o reinicie la aplicación.");
+                    console.log("Error en la base de datos: " + error.message);
+                    return;
+                  });
+
+                  Object.entries(alumno.mediciones).forEach(([indiceMedicion, medicion]) => {
+                    var consultaInsertarMedicion = "INSERT INTO mediciones(id_alumno, id_grupo, fecha, masa, diagnostico_peso, z_peso, estatura,  diagnostico_talla, z_talla, imc, diagnostico_imc, z_imc, perimetro_cuello, cintura, triceps, subescapula, pliegue_cuello) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+                    var fechaComp = alumno.datos.fecha.split("/");
+                    var fecha = fechaComp[2] + "-" + fechaComp[1] + "-" + fechaComp[0];
+                    var parametros = [
+                      medicion.id_alumno,                      
+                      medicion.id_grupo,                    
+                      fecha,
+                      medicion.masa,
+                      medicion.diagnostico_peso,
+                      medicion.z_peso,
+                      medicion.estatura,
+                      medicion.diagnostico_talla,
+                      medicion.z_talla,
+                      medicion.imc,
+                      medicion.diagnostico_imc,
+                      medicion.z_imc,
+                      medicion.perimetro_cuello,
+                      medicion.cintura,
+                      medicion.triceps,
+                      medicion.subescapula,
+                      medicion.pliegue_cuello
+                    ];
+                    oj.gConexionDB().transaction(function (transaccion) {
+                      transaccion.executeSql(consultaInsertarMedicion,
+                        parametros, reportarDescargaMedicion, manejarErrores);
+                    }, function (error) {
+                      alert("Error durante la descarga de datos escolares, intente nuevamente o reinicie la aplicación.");
+                      console.log("Error en la base de datos: " + error.message);
+                      return;
+                    });
+                  });
+                });
+              }
+              document.getElementById("dialogoSincronizacion").close();
+            }
+          }
+          peticionAlumnos.send();
+      };
+
       function reportarDescargaEscuela(transaccion, resultados) {
-        console.log("Descarga de escuela terminada.");
+        console.log("Descarga de escuela terminada.");        
         var peticionGrupos = new XMLHttpRequest();
         peticionGrupos.open("GET", oj.gWSUrl() + "obtenerDatosGrupos/" + self.nuevoEscuelaAlumno(), true);
         peticionGrupos.onreadystatechange = function () {
           if (this.readyState === 4) {
             if (this.status === 200) {
-              var json = JSON.parse(this.responseText);
-              Object.entries(json.grupos).forEach(([indiceGrupo, grupo]) => {
+              var json = JSON.parse(this.responseText);     
+              self.limiteAlumno(parseInt(json.grupos.length)-1);          
+              Object.entries(json.grupos).forEach(([indiceGrupo, grupo]) => {               
                 if(grupo.grado !== "EGRESADO") {
                   var consultaInsertarGrupo = "INSERT INTO grupos(id_grupo, letra, anio_ingreso, id_escuela) VALUES(?,?,?,?)";
                   var parametros = [
@@ -629,9 +923,8 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
                   }, function (error) {
                     alert("Error durante la descarga de datos escolares, intente nuevamente o reinicie la aplicación.");
                     console.log("Error en la base de datos: " + error.message);
-                    return;
-                  });  
-                }              
+                  });
+                }            
               });
             }            
             document.getElementById("dialogoCargando").close();
@@ -641,27 +934,64 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
       }
 
       self.descargarEscuela = function() {
+        var fallo = false;
         document.getElementById("dialogoCargando").open();
+
+        var consultaEliminarMediciones = "DELETE FROM datos";
+        oj.gConexionDB().transaction(function (transaccion) {
+          transaccion.executeSql(consultaEliminarMediciones,
+            [], reportarLimpiezaDatos, manejarErrores);
+        }, function (error) {
+          alert("Error durante la descarga de datos escolares, intente nuevamente o reinicie la aplicación.");
+          console.log("Error en la base de datos: " + JSON.stringify(error));
+          fallo = true;
+        });
+
+        if(fallo) {
+          return;
+        }
+
+        var consultaEliminarAlumnos = "DELETE FROM alumnos";
+        oj.gConexionDB().transaction(function (transaccion) {
+          transaccion.executeSql(consultaEliminarAlumnos,
+            [], reportarLimpiezaDatos, manejarErrores);
+        }, function (error) {
+          alert("Error durante la descarga de datos escolares, intente nuevamente o reinicie la aplicación.");
+          console.log("Error en la base de datos: " + JSON.stringify(error));
+          fallo = true;
+        });
+
+        if(fallo) {
+          return;
+        }
 
         var consultaEliminarGrupos = "DELETE FROM grupos";
         oj.gConexionDB().transaction(function (transaccion) {
           transaccion.executeSql(consultaEliminarGrupos,
-            [], reportarLimpiezaEscuelas, manejarErrores);
+            [], reportarLimpiezaDatos, manejarErrores);
         }, function (error) {
           alert("Error durante la descarga de datos escolares, intente nuevamente o reinicie la aplicación.");
           console.log("Error en la base de datos: " + JSON.stringify(error));
-          return;
+          fallo = true;
         });
+
+        if(fallo) {
+          return;
+        }
 
         var consultaEliminarEscuelas = "DELETE FROM escuelas";
         oj.gConexionDB().transaction(function (transaccion) {
           transaccion.executeSql(consultaEliminarEscuelas,
-            [], reportarLimpiezaEscuelas, manejarErrores);
+            [], reportarLimpiezaDatos, manejarErrores);
         }, function (error) {
           alert("Error durante la descarga de datos escolares, intente nuevamente o reinicie la aplicación.");
           console.log("Error en la base de datos: " + JSON.stringify(error));
-          return;
+          fallo = true;
         });      
+
+        if(fallo) {
+          return;
+        }
 
         var peticionEscuelas = new XMLHttpRequest();
         peticionEscuelas.open("GET", oj.gWSUrl() + "obtenerDatosEscuelas", true);
@@ -691,6 +1021,14 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
                     console.log("Error en la base de datos: " + error.message);
                     return;
                   });
+
+                  var jsonEscuelas = [
+                    { value: -1, label: "NO SELECCIONADA" },
+                    { value: escuela.id_escuela, label: escuela.nombre}
+                  ];
+                  
+                  self.origenDatosEscuelas(new oj.ArrayDataProvider(jsonEscuelas)); 
+
                   return true;
                 }
               });
@@ -741,7 +1079,7 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
       };
 
       self.nuevaMedicion = function () {
-        if(self.idAlumno() !== undefined && self.idAlumno() !== ""){
+        if(self.idAlumno() !== undefined && self.idAlumno() !== "" &&  Object.keys(datosAlumnoActual).length !== 0){
           self.origenDatosGrupos(new oj.ArrayDataProvider(grupos[datosAlumnoActual.id_escuela], { keyAttributes: 'value' }));
           self.nuevoGrupoAlumno(datosAlumnoActual.id_grupo);
           self.tituloDialogoMedicion("Agregar nueva medición");
@@ -754,7 +1092,7 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
 
       self.editarMedicion = function() {
         var listaMediciones = document.getElementById("listaMediciones");
-        if(self.idAlumno() === undefined || self.idAlumno() === null || self.idAlumno() === "") {
+        if (self.idAlumno() === undefined || self.idAlumno() === null || self.idAlumno() === "" || Object.keys(datosAlumnoActual).length === 0) {
           alert("Favor de seleccionar un alumno");
         }else if(listaMediciones === undefined || listaMediciones === null) {
           alert("Para editar mediciones es necesario tener al menos una.");
@@ -836,7 +1174,7 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
       };
 
       self.abrirDialogoEditarAlumno = function() {
-        if(self.idAlumno() === undefined || self.idAlumno() === null || self.idAlumno() === "") {
+        if(self.idAlumno() === undefined || self.idAlumno() === null || self.idAlumno() === "" || Object.keys(datosAlumnoActual).length === 0) {
           alert("Favor de seleccionar un alumno");
         }
 
@@ -1027,7 +1365,7 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
       self.seleccionarAlumno = function () {
         var datos = '{"NoData":""}';
         datos = JSON.parse("[" + datos + "]");
-        if(self.alumnoSeleccionado() === undefined || self.alumnoSeleccionado() === null) {
+        if(self.alumnoSeleccionado() === undefined || self.alumnoSeleccionado() === null || Object.keys(datosAlumnoActual).length === 0) {
           alert("Favor de seleccionar un alumno.");
           return;
         }

@@ -13,6 +13,7 @@ define(['knockout', 'ojs/ojcore', 'ojs/ojrouter', 'ojs/ojthemeutils', 'ojs/ojmod
      function ControllerViewModel() {
       var self = this;
       oj.gOfflineMode = ko.observable(false);
+      oj.gModoDependiente = ko.observable(true);
       oj.gWSUrl = ko.observable();
       oj.gConexionDB = ko.observable();
       var directorioAndroid = "file:///storage/emulated/0/";
@@ -21,11 +22,16 @@ define(['knockout', 'ojs/ojcore', 'ojs/ojrouter', 'ojs/ojthemeutils', 'ojs/ojmod
 
       function procesarParametros(transaccion, resultados) {
         var numFilas = resultados.rows.length;
-        for (var indiceFila = 0; indiceFila < numFilas; indiceFila++) {          
-          if(resultados.rows.item(indiceFila).nombre === "desconectada") {
-            oj.gOfflineMode(resultados.rows.item(indiceFila).valor === "si");
-          } else if(resultados.rows.item(indiceFila).nombre === "servidor") {
-            oj.gWSUrl(resultados.rows.item(indiceFila).valor +"/SISVANWS/rest/wls/1.0/");
+        for (var indiceFila = 0; indiceFila < numFilas; indiceFila++) {      
+          switch(resultados.rows.item(indiceFila).nombre) {
+            case "desconectada":
+              oj.gOfflineMode(resultados.rows.item(indiceFila).valor === "si");
+              break;
+            case "servidor":
+              oj.gWSUrl(resultados.rows.item(indiceFila).valor +"/SISVANWS/rest/wls/1.0/");
+              break;
+            case "modo":
+              oj.gModoDependiente(resultados.rows.item(indiceFila).valor === "dependiente");
           }
         }
       }
@@ -43,8 +49,7 @@ define(['knockout', 'ojs/ojcore', 'ojs/ojrouter', 'ojs/ojthemeutils', 'ojs/ojmod
           }, function(error){
               alert("Error durante la inicialización, intente reiniciando la aplicación, si la falla persiste contecte al soporte técnico.");
               console.log("Error en la base de datos: " + error.message);
-          });
-          
+          });          
       }, false);
 
       // Handle announcements sent when pages change, for Accessibility.
@@ -63,15 +68,37 @@ define(['knockout', 'ojs/ojcore', 'ojs/ojrouter', 'ojs/ojthemeutils', 'ojs/ojmod
       // Save the theme so we can perform platform specific navigational animations
       var platform = ThemeUtils.getThemeTargetPlatform();
 
+      // Navigation setup
+      var navData = [
+        {name: 'Colectivas', id: 'evalGrup',
+         iconClass: 'oj-navigationlist-item-icon demo-icon-font-24 demo-people-icon-24'},
+        {name: 'Individuales', id: 'evalIndv',
+         iconClass: 'oj-navigationlist-item-icon demo-icon-font-24 demo-person-icon-24'},
+        {name: 'Estadísticas', id: 'estUtils',
+         iconClass: 'oj-navigationlist-item-icon demo-icon-font-24 demo-chart-icon-24'}        
+       ];
+
       // Router setup
       self.router = Router.rootInstance;
 
-      self.router.configure({
-       'evalGrup': {label: 'Evaluaciones colectivas', isDefault: true},
-       'evalIndv': {label: 'Evaluación individual'},
-       'estUtils': {label: 'Estadísticas OMS'},
-       'datEsc': {label: 'Datos escolares'}
-      });
+      if(oj.gModoDependiente() !== true) {
+        self.router.configure({
+          'evalGrup': {label: 'Evaluaciones colectivas', isDefault: true},
+          'evalIndv': {label: 'Evaluación individual'},
+          'estUtils': {label: 'Estadísticas OMS'},
+          'datEsc': {label: 'Datos escolares'}
+         });
+        navData.push({
+          name: 'Escolares', id: 'datEsc',
+          iconClass: 'oj-navigationlist-item-icon demo-icon-font-24 demo-library-icon-24'
+        });
+      } else {
+        self.router.configure({
+          'evalGrup': {label: 'Evaluaciones colectivas', isDefault: true},
+          'evalIndv': {label: 'Evaluación individual'},
+          'estUtils': {label: 'Estadísticas OMS'}
+         });
+      }      
 
       Router.defaults['urlAdapter'] = new Router.urlParamAdapter();
       // Callback function that can return different animations based on application logic.
@@ -132,17 +159,8 @@ define(['knockout', 'ojs/ojcore', 'ojs/ojrouter', 'ojs/ojthemeutils', 'ojs/ojmod
          }, manejarErrores);
        };    
 
-      // Navigation setup
-      var navData = [
-      {name: 'Colectivas', id: 'evalGrup',
-       iconClass: 'oj-navigationlist-item-icon demo-icon-font-24 demo-people-icon-24'},
-      {name: 'Individuales', id: 'evalIndv',
-       iconClass: 'oj-navigationlist-item-icon demo-icon-font-24 demo-person-icon-24'},
-      {name: 'Estadísticas', id: 'estUtils',
-       iconClass: 'oj-navigationlist-item-icon demo-icon-font-24 demo-chart-icon-24'},
-      {name: 'Escolares', id: 'datEsc',
-       iconClass: 'oj-navigationlist-item-icon demo-icon-font-24 demo-library-icon-24'}
-     ];
+      
+
 
       self.navDataProvider = new ArrayDataProvider(navData, {keyAttributes: 'id'});
 

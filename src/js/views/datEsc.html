@@ -24,12 +24,16 @@
             <oj-toolbar style="width: 100%;" id='barra-herramientas' aria-label='Barra de herramientas' aria-controls='controlled'
               class="oj-toolbar-bottom-border oj-sm-justify-content-space-around">
               <oj-button id='agregar-alumno' display='icons' on-oj-action="[[crearNuevaEscuela]]">
-                <span slot='startIcon' class='oj-ux-ico-add-create-page'></span>
+                <span slot='startIcon' class='oj-ux-ico-file-add'></span>
                 Agregar escuela
               </oj-button>
               <oj-button id='editar-alumno' display='icons'>
                 <span slot='startIcon' class='oj-ux-ico-add-edit-page'></span>
                 Editar escuela
+              </oj-button>
+              <oj-button id='editar-alumno' display='icons'>
+                <span slot='startIcon' class='oj-ux-ico-file-remove'></span>
+                Eliminar escuela
               </oj-button>
             </oj-toolbar>
             <oj-accordion id="lista-escuelas">              
