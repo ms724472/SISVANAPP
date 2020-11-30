@@ -192,7 +192,7 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
           
           var hoy = new Date();
           var fechaIngreso = new Date('08/01/' + resultados.rows.item(indiceFila).anio_ingreso);
-          var diferencia = (((hoy.getFullYear() - fechaIngreso.getFullYear()) * 12) + (hoy.getMonth() - fechaIngreso.getMonth()))/12;
+          var diferencia = self.diferenciaMeses(fechaIngreso, hoy, false)/12;
           var grado = Math.ceil(diferencia);;
           var grupoBD = {};
           grupoBD.value = resultados.rows.item(indiceFila).id_grupo;
@@ -295,6 +295,68 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
       moduleUtils.createView({ 'viewPath': 'views/header.html' }).then(function (view) {
         self.headerConfig({ 'view': view, 'viewModel': new app.getHeaderModel() })
       });
+
+      self.obtenerEstadisticas = function (tipo, sexo, historicoAlumno, meses) {        
+        var estadisticasJSON = [];
+        var tabla = "percentiles_oms_" + tipo;
+        var consultaEstadisticas = "SELECT cast(replace(id_percentil, ?, '') as unsigned) as mes, \n"
+          + "sd3, \n"
+          + "sd2, \n"
+          + "sd1, \n"
+          + "sd0, \n"
+          + "sd1_neg, \n"
+          + "sd2_neg, \n"
+          + "sd3_neg FROM \n"
+          + tabla + " WHERE id_percentil LIKE('%" + sexo + "%') \n"
+          + "ORDER BY mes";
+        oj.gConexionDB().transaction(function (transaccion) {
+          transaccion.executeSql(consultaEstadisticas, [sexo], function (transaccion, resultados) {
+            var contador = resultados.rows.length;            
+            var idEstadistica = 0;
+            for (var indice = 0; indice < contador; indice++) {
+              var estActual = resultados.rows.item(indice);
+              var columnas = Object.keys(estActual);
+              var mes;
+              for (var subIndice in columnas) {
+                var serie = columnas[subIndice];
+                if (serie === "mes") {
+                  mes = estActual[columnas[subIndice]];
+                  continue;
+                }
+
+                var estActualJSON = {};
+                estActualJSON.id = idEstadistica;
+                estActualJSON.serie = columnas[subIndice];
+                estActualJSON.mes = mes;
+                estActualJSON.valor = estActual[columnas[subIndice]];
+                estadisticasJSON.push(estActualJSON);
+                idEstadistica++;
+                
+                if(meses.includes(mes) === true) {
+                  estadisticasJSON.push(historicoAlumno[meses.indexOf(mes)]);
+                  idEstadistica++;
+                }
+              }
+
+              if(indice === contador-2) {
+                switch(tipo) {
+                  case "imc":
+                    self.datosIMC(new oj.ArrayDataProvider(estadisticasJSON));
+                    break;
+                  case "talla":
+                    self.datosEstatura(new oj.ArrayDataProvider(estadisticasJSON));
+                    break;
+                  case "peso":
+                    self.datosPeso(new oj.ArrayDataProvider(estadisticasJSON));
+                    break;
+                }
+              }              
+            }
+          }, function (transaccion, error) {
+            alert("Problemas con la aplicación, por favor reiniciala: " + error.code);
+          });
+        });
+      };
 
       self.escuelaSeleccionada = function (event) {
         var id_escuela = event['detail'].value === null ? "-1" : event['detail'].value.toString();
@@ -468,14 +530,21 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
 
       function procesarMedicionesDB(transaccion, resultados) {
         var numFilas = resultados.rows.length;
-        var jsonMediciones = [];        
+        var jsonMediciones = [];
+        var historicoContador = 0;
+        var historicoIMC = [];  
+        var historicoTalla = []; 
+        var pesoContador = 0;
+        var historicoPeso = [];      
+        var listaMeses = [];
         for (var indiceFila = 0; indiceFila < numFilas; indiceFila++) {
           var fila = resultados.rows.item(indiceFila);
           var compFecha = fila.fecha.split("-");  
           var compFechaNac = fila.fecha_nac.split("-");  
           var fechaMedicion = new Date(compFecha[0], compFecha[1], compFecha[2]); 
           var fechaNac = new Date(compFechaNac[0], compFechaNac[1], compFechaNac[2]); 
-          var meses = self.diferenciaMeses(fechaNac, fechaMedicion, false);
+          var meses = self.diferenciaMeses(fechaNac, fechaMedicion, false);     
+          listaMeses.push(meses);   
           var gruposEscuela = grupos[fila.id_escuela.toString()];
           var grupo = "";
           gruposEscuela.some(function(grupoActual) {
@@ -504,8 +573,46 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
             pliegue_cuello: fila.pliegue_cuello
           };
           jsonMediciones.push(medicionActual);
+
+          var actualIMC = {
+            id: historicoContador,
+            serie: "imc",
+            mes: meses,
+            valor: fila.imc
+          };
+
+          historicoIMC.push(actualIMC);
+
+          var actualTalla = {
+            id: historicoContador,
+            serie: "talla",
+            mes: meses,
+            valor: fila.estatura
+          };
+
+          historicoTalla.push(actualTalla);
+
+          if(fila.diagnostico_peso !== "") {
+            var actualPeso = {
+              id: pesoContador,
+              serie: "peso",
+              mes: meses,
+              valor: fila.masa
+            };
+            historicoPeso.push(actualPeso);
+          }
         }
         self.procesarMediciones(jsonMediciones);
+
+        if(jsonMediciones.length === 0) {
+          self.obtenerEstadisticas("imc", datosAlumnoActual.sexo.toLowerCase(), [], []);
+          self.obtenerEstadisticas("talla", datosAlumnoActual.sexo.toLowerCase(), [], []);
+          self.obtenerEstadisticas("peso", datosAlumnoActual.sexo.toLowerCase(), [], []);
+        } else {
+          self.obtenerEstadisticas("imc", datosAlumnoActual.sexo.toLowerCase(), historicoIMC, listaMeses);
+          self.obtenerEstadisticas("talla", datosAlumnoActual.sexo.toLowerCase(), historicoTalla, listaMeses);
+          self.obtenerEstadisticas("peso", datosAlumnoActual.sexo.toLowerCase(), historicoPeso, listaMeses);
+        }
       }
 
       function procesarDatosDB(transaccion, resultados) {
@@ -549,7 +656,7 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
       // Below are a set of the ViewModel methods invoked by the oj-module component.
       // Please reference the oj-module jsDoc for additional information.
       self.obtenerInfo = function () {
-        if(oj.gOfflineMode() !== true) {        
+        if (oj.gOfflineMode() !== true) {
           $.ajax({
             type: "GET",
             contentType: "text/plain; charset=utf-8",
@@ -579,9 +686,9 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
             success: function (data) {
               json = JSON.parse(data);
               if (json.hasOwnProperty("error")) {
-                if(json.error === "No hay datos.") {
+                if (json.error === "No hay datos.") {
                   var listaMediciones = document.getElementById("listaMediciones");
-                  if(listaMediciones !== undefined && listaMediciones !== null) {
+                  if (listaMediciones !== undefined && listaMediciones !== null) {
                     listaMediciones.remove();
                   }
                 } else {
@@ -596,61 +703,61 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
             alert("Error en el servidor, favor de comunicarse con el administrador.");
             return;
           });
-      } else {
-        oj.gConexionDB().transaction(function(transaccion) {
-          transaccion.executeSql("SELECT alumnos.*, grupos.id_escuela FROM alumnos INNER JOIN grupos ON alumnos.id_grupo = grupos.id_grupo WHERE id_alumno = ?",
-          [self.idAlumno()], procesarDatosDB, manejarErrores);            
-        }, function(error){
-            alert("Error durante la inicialización, intente reiniciando la aplicación, si la falla persiste contecte al soporte técnico.");
-            console.log("Error en la base de datos: " + error.message);
-        });
-      }
-        
-        var mediciones = ["imc", "talla", "peso"];
-        mediciones.forEach(function callback(medicionActual) {
-          var peticionHistotico = new XMLHttpRequest();
-          peticionHistotico.open("GET", oj.gWSUrl() + "alumnos/obtenerHistorico/" + medicionActual + "/" + self.idAlumno(), true);
-          peticionHistotico.onreadystatechange = function () {
-            if (this.readyState === 4) {
-              if (this.status === 200) {
-                var jsonResponse = JSON.parse(this.responseText);
-                if (jsonResponse.hasOwnProperty("error")) {
-                  if (jsonResponse.error === "No hay datos.") {
-                    switch(medicionActual) {
+
+          var mediciones = ["imc", "talla", "peso"];
+          mediciones.forEach(function callback(medicionActual) {
+            var peticionHistotico = new XMLHttpRequest();
+            peticionHistotico.open("GET", oj.gWSUrl() + "alumnos/obtenerHistorico/" + medicionActual + "/" + self.idAlumno(), true);
+            peticionHistotico.onreadystatechange = function () {
+              if (this.readyState === 4) {
+                if (this.status === 200) {
+                  var jsonResponse = JSON.parse(this.responseText);
+                  if (jsonResponse.hasOwnProperty("error")) {
+                    if (jsonResponse.error === "No hay datos.") {
+                      switch (medicionActual) {
+                        case "imc":
+                          self.datosIMC(new oj.ArrayDataProvider([]));
+                          break;
+                        case "talla":
+                          self.datosEstatura(new oj.ArrayDataProvider([]));
+                          break;
+                        case "peso":
+                          self.datosPeso(new oj.ArrayDataProvider([]));
+                          break;
+                      }
+                    } else {
+                      alert('No es posible obtener los datos, por favor contacta al administrador.');
+                    }
+                    return;
+                  } else {
+                    switch (medicionActual) {
                       case "imc":
-                        self.datosIMC(new oj.ArrayDataProvider([]));
+                        self.datosIMC(new oj.ArrayDataProvider(jsonResponse.mediciones, { keyAttributes: 'id' }));
                         break;
                       case "talla":
-                        self.datosEstatura(new oj.ArrayDataProvider([]));
+                        self.datosEstatura(new oj.ArrayDataProvider(jsonResponse.mediciones, { keyAttributes: 'id' }));
                         break;
                       case "peso":
-                        self.datosPeso(new oj.ArrayDataProvider([]));
+                        self.datosPeso(new oj.ArrayDataProvider(jsonResponse.mediciones, { keyAttributes: 'id' }));
                         break;
-                    } 
-                  } else {
-                    alert('No es posible obtener los datos, por favor contacta al administrador.');
+                    }
                   }
-                  return;
                 } else {
-                  switch(medicionActual) {
-                    case "imc":
-                      self.datosIMC(new oj.ArrayDataProvider(jsonResponse.mediciones, { keyAttributes: 'id' }));
-                      break;
-                    case "talla":
-                      self.datosEstatura(new oj.ArrayDataProvider(jsonResponse.mediciones, { keyAttributes: 'id' }));
-                      break;
-                    case "peso":
-                      self.datosPeso(new oj.ArrayDataProvider(jsonResponse.mediciones, { keyAttributes: 'id' }));
-                      break;
-                  }
+                  alert("Error en el servidor, favor de comunicarse con el administrador.");
                 }
-              } else {
-                alert("Error en el servidor, favor de comunicarse con el administrador.");
               }
-            }
-          };
-          peticionHistotico.send();
-        });
+            };
+            peticionHistotico.send();
+          });
+        } else {
+          oj.gConexionDB().transaction(function (transaccion) {
+            transaccion.executeSql("SELECT alumnos.*, grupos.id_escuela FROM alumnos INNER JOIN grupos ON alumnos.id_grupo = grupos.id_grupo WHERE id_alumno = ?",
+              [self.idAlumno()], procesarDatosDB, manejarErrores);
+          }, function (error) {
+            alert("Error durante la inicialización, intente reiniciando la aplicación, si la falla persiste contecte al soporte técnico.");
+            console.log("Error en la base de datos: " + error.message);
+          });
+        }
       };
 
       self.valorMedidaCambio = function (event) {
@@ -860,7 +967,7 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
                   });
 
                   Object.entries(alumno.mediciones).forEach(([indiceMedicion, medicion]) => {
-                    var consultaInsertarMedicion = "INSERT INTO mediciones(id_alumno, id_grupo, fecha, masa, diagnostico_peso, z_peso, estatura,  diagnostico_talla, z_talla, imc, diagnostico_imc, z_imc, perimetro_cuello, cintura, triceps, subescapula, pliegue_cuello) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+                    var consultaInsertarMedicion = "INSERT INTO mediciones(id_alumno, id_grupo, fecha, masa, diagnostico_peso, z_peso, estatura,  diagnostico_talla, z_talla, diagnostico_imc, z_imc, perimetro_cuello, cintura, triceps, subescapula, pliegue_cuello) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
                     var fechaComp = alumno.datos.fecha.split("/");
                     var fecha = fechaComp[2] + "-" + fechaComp[1] + "-" + fechaComp[0];
                     var parametros = [
@@ -873,7 +980,6 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
                       medicion.estatura,
                       medicion.diagnostico_talla,
                       medicion.z_talla,
-                      medicion.imc,
                       medicion.diagnostico_imc,
                       medicion.z_imc,
                       medicion.perimetro_cuello,
