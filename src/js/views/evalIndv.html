@@ -315,7 +315,7 @@
         <div class="oj-flex">
           <oj-flex-item style="width: 100%;">
             <oj-label for="nuevaFMedicion" show-required>Fecha medicion:</oj-label>
-            <oj-input-date class="campo" required="true" id="nuevaFMedicion" value="{{fechaMedicion}}" converter=[[convertidorFechas]] validators="[[validadorFechas]]" 
+            <oj-input-date class="campo" required="true" disabled="[[deshabilitarFecha]]" id="nuevaFMedicion" value="{{fechaMedicion}}" converter=[[convertidorFechas]] validators="[[validadorFechas]]" 
             required translations='{
                 "required": {
                   "messageSummary": "Valor requerido.",  
