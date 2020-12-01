@@ -197,7 +197,7 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
           var hoy = new Date();
           var fechaIngreso = new Date('08/01/' + resultados.rows.item(indiceFila).anio_ingreso);
           var diferencia = self.diferenciaMeses(fechaIngreso, hoy, false)/12;
-          var grado = Math.ceil(diferencia);;
+          var grado = Math.ceil(diferencia);
           var grupoBD = {};
           grupoBD.value = resultados.rows.item(indiceFila).id_grupo;
           grupoBD.label = grado + " " + resultados.rows.item(indiceFila).letra;
@@ -1123,7 +1123,9 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
         document.getElementById('dialogoBuscarAlumno').open();        
       };
 
-      self.cancelarBusqueda = function () {
+      self.cancelarBusqueda = function () {        
+        document.getElementById('nombreABuscar').value = '';
+        self.origenDatosNombres(new oj.ArrayDataProvider([]));
         document.getElementById('dialogoBuscarAlumno').close();
       };
 
@@ -1192,30 +1194,65 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
 
       self.encontrarAlumno = function () {
         var nombreAlumno = document.getElementById("nombreABuscar").value;
-        var datos = '{"No se encontraron resultados":""}';
-        datos = JSON.parse("[" + datos + "]");
+        var datos = [{ NoData: "" }];
 
-        $.ajax({
-          type: "GET",
-          contentType: "text/plain; charset=utf-8",
-          url: oj.gWSUrl() + "alumnos/buscarPorNombre/" + nombreAlumno,
-          dataType: "text",
-          async: false,
-          success: function (data) {
-            json = JSON.parse(data);
-            if (json.hasOwnProperty("error") && json.error !== "No hay datos.") {
-              alert('No se encontro ningun alumno');
-              return;
-            } else if (json.error === "No hay datos.") {
-              self.origenDatosNombres(new oj.ArrayDataProvider(datos));
-            } else {
-              self.origenDatosNombres(new oj.ArrayDataProvider(json.alumnos, { keyAttributes: 'id_alumno' }));
+        if(oj.gOfflineMode() !== true) {
+          $.ajax({
+            type: "GET",
+            contentType: "text/plain; charset=utf-8",
+            url: oj.gWSUrl() + "alumnos/buscarPorNombre/" + nombreAlumno,
+            dataType: "text",
+            async: false,
+            success: function (data) {
+              json = JSON.parse(data);
+              if (json.hasOwnProperty("error") && json.error !== "No hay datos.") {
+                alert('No se encontro ningun alumno');
+                return;
+              } else if (json.error === "No hay datos.") {
+                self.origenDatosNombres(new oj.ArrayDataProvider(datos));
+              } else {
+                self.origenDatosNombres(new oj.ArrayDataProvider(json.alumnos, { keyAttributes: 'id_alumno' }));
+              }
             }
-          }
-        }).fail(function () {
-          alert("Error en el servidor, favor de comunicarse con el administrador.");
-          return;
-        });
+          }).fail(function () {
+            alert("Error en el servidor, favor de comunicarse con el administrador.");
+            return;
+          }); 
+        } else {
+          var consultaAlumno = "SELECT id_alumno, REPLACE(REPLACE(alumnos.nombre, '-E', ''), '-M', '') || ' ' || apellido_p || ' ' || apellido_m as nombre_completo, escuelas.nombre as nombre_escuela,anio_ingreso,letra\n"
+            + "FROM alumnos \n"
+            + "INNER JOIN grupos ON alumnos.id_grupo = grupos.id_grupo \n"
+            + "INNER JOIN escuelas ON grupos.id_escuela = escuelas.id_escuela\n"
+            + "WHERE alumnos.nombre like '%" + nombreAlumno + "%' OR apellido_p like '%" + nombreAlumno + "%' OR apellido_m like '%" + nombreAlumno + "%';";
+          var listaResultados = [];
+          
+          oj.gConexionDB().transaction(function (transaccion) {
+          transaccion.executeSql(consultaAlumno,
+            [], function(transaccion, resultados){
+              var numFilas = resultados.rows.length;
+              for (var indiceFila = 0; indiceFila < numFilas; indiceFila++) {                
+                var fila = resultados.rows.item(indiceFila);
+                var hoy = new Date();
+                var fechaIngreso = new Date('08/01/' + fila.anio_ingreso);
+                var diferencia = self.diferenciaMeses(fechaIngreso, hoy, false)/12;
+                var grado = Math.ceil(diferencia);
+                var grupo = grado + " " + fila.letra;
+                var alumnoEncontrado = {
+                  id_alumno: fila.id_alumno,
+                  nombre_completo: fila.nombre_completo,
+                  nombre_escuela: fila.nombre_escuela,
+                  grupo: grupo
+                };
+                listaResultados.push(alumnoEncontrado);
+              }
+              self.origenDatosNombres(new oj.ArrayDataProvider(listaResultados, { keyAttributes: 'id_alumno' }));
+            }, manejarErrores);
+          }, function (error) {
+            alert("Error durante la descarga de datos escolares, intente nuevamente o reinicie la aplicación.");
+            console.log("Error en la base de datos: " + error.message);
+            return;
+          });
+        }
       };
 
       self.abrirDialogoNuevoAlumno = function() {
@@ -1638,15 +1675,13 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
       };
 
       self.seleccionarAlumno = function () {
-        var datos = '{"NoData":""}';
-        datos = JSON.parse("[" + datos + "]");
-        if(self.alumnoSeleccionado() === undefined || self.alumnoSeleccionado() === null || Object.keys(datosAlumnoActual).length === 0) {
+        if(self.alumnoSeleccionado() === undefined || self.alumnoSeleccionado() === null) {
           alert("Favor de seleccionar un alumno.");
           return;
         }
         document.getElementById('num-alumno').value = self.alumnoSeleccionado()._keys.values().next().value;
         document.getElementById('nombreABuscar').value = '';
-        self.origenDatosNombres(new oj.ArrayDataProvider(datos));
+        self.origenDatosNombres(new oj.ArrayDataProvider([]));
         document.getElementById('dialogoBuscarAlumno').close();
         self.obtenerInfo();
       };
