@@ -405,7 +405,7 @@
   </div>
   <div slot="footer">
     <oj-button id="botonCancelarMedicion" on-oj-action="[[cancelarSincronizacion]]">Cancelar</oj-button>
-    <oj-button id="botonSincronizar" disabled="[[!oj.gOfflineMode()]]">Sincronizar</oj-button>
+    <oj-button id="botonSincronizar" disabled="[[!oj.gOfflineMode()]]" on-oj-action="[[subirDatos]]">Sincronizar</oj-button>
   </div>
 </oj-dialog>
 <oj-dialog  style="display:none;width: 95%;" id="dialogoDescarga" dialog-title="¡ATENCIÓN!">
@@ -455,5 +455,26 @@
   <div slot="footer">
     <oj-button id="botonCancelarMediana" on-oj-action="[[cancelarMediana]]">Cancelar</oj-button>
     <oj-button id="botonLlenarCampo"  on-oj-action="[[llenarCampo]]" disabled="[[medianaCalculada() === '']]">Llenar campo</oj-button>
+  </div>
+</oj-dialog>
+<oj-dialog  style="display:none;width: 95%;" id="dialogoConectar" dialog-title="¡ATENCIÓN!">
+  <div slot="body">
+    Est&aacute;s a punto de regresar al modo de conexi&oacute;n con el servidor, por favor asegurate de haber
+    sincronizado previamente todos los datos antes de proceder.
+    <br/>
+    <br/>
+    <strong>Todos los datos que no se hayan sincronizado se perder&aacute;n.</strong>
+  </div>
+  <div slot="footer">
+    <oj-button id="botonCancelarDescarga" on-oj-action="[[cancelarConexion]]">Cancelar</oj-button>
+    <oj-button id="botonDescargar" on-oj-action="[[conectarServidor]]">Conectar</oj-button>
+  </div>
+</oj-dialog>
+<oj-dialog  style="display:none;width: 95%;" id="dialogoErrorSincronizacion" dialog-title="¡ERROR!">
+  <div slot="body">    
+    <strong>La base de datos se ha corrompido, por favor contacte a soporte.</strong>
+  </div>
+  <div slot="footer">
+    <oj-button id="botonCancelarDescarga" on-oj-action="[[aceptarError]]">Aceptar</oj-button>
   </div>
 </oj-dialog>
