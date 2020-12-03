@@ -21,7 +21,7 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
       var numeroDeMedida = 0;
       var medicionesExistentes = [];
       var consultaInsertarAlumno = "INSERT INTO alumnos(id_alumno, nombre, apellido_p, apellido_m, sexo, fecha_nac, id_grupo) VALUES(?,?,?,?,?,?,?)";
-      var consultaInsertarMedicion = "INSERT INTO datos(id_alumno, id_grupo, fecha, masa, diagnostico_peso, z_peso, estatura,  diagnostico_talla, z_talla, diagnostico_imc, z_imc, perimetro_cuello, cintura, triceps, subescapula, pliegue_cuello) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+      var consultaInsertarMedicion = "INSERT INTO datos(id_alumno, id_grupo, fecha, masa, diagnostico_peso, z_peso, estatura,  diagnostico_talla, z_talla, imc, diagnostico_imc, z_imc, perimetro_cuello, cintura, triceps, subescapula, pliegue_cuello) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
       self.datosAlumno = ko.observable();
       self.idAlumno = ko.observable();
       self.dataProvider = ko.observable();
@@ -931,6 +931,7 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
                       medicion.estatura,
                       medicion.diagnostico_talla,
                       medicion.z_talla,
+                      medicion.imc,
                       medicion.diagnostico_imc,
                       medicion.z_imc,
                       medicion.perimetro_cuello,
@@ -947,6 +948,8 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
                       console.log("Error en la base de datos: " + error.message);
                       return;
                     });
+
+                    document.getElementById('dialogoSincronizacion').close();
                   });
                 });
               }
@@ -1133,6 +1136,7 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
               self.evitarCiclo(true)
               oj.gOfflineMode(false);
               self.obtenerEscuelasServidor();
+              document.getElementById('dialogoSincronizacion').close();
             } else if(this.status === 406) {
               document.getElementById("dialogoErrorSincronizacion").open();
             }else {
@@ -1276,7 +1280,8 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
         }
       };
 
-      self.conectarServidor = function() {
+      self.conectarServidor = function() {        
+        self.obtenerEscuelasServidor();
         self.actualizarBanderDesconexion("no");
         document.getElementById("dialogoConectar").close();
       }
@@ -1513,7 +1518,7 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
         });
       };
 
-      self.procesarMedicionBD = function(meses, puntajeIMC, puntajeTalla, puntajePeso) {
+      self.procesarMedicionBD = function(meses, puntajeIMC, puntajeTalla, puntajePeso, imc) {
         var consultaMedicion = consultaInsertarMedicion;
         var parametros;
 
@@ -1546,6 +1551,7 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
             self.talla(),
             diagnosticoTalla,
             puntajeTalla.toFixed(5),
+            imc,
             diagnosticoIMC,
             puntajeIMC.toFixed(5),
             self.perCuello(),
@@ -1572,6 +1578,7 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
                              "estatura = ?,\n" +
                              "diagnostico_talla = ?,\n" +
                              "z_talla = ?,\n" +
+                             "imc = ?,\n" +
                              "diagnostico_imc = ?,\n" +
                              "z_imc = ?,\n" + 
                              "perimetro_cuello = ?,\n" +
@@ -1589,6 +1596,7 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
             self.talla(),
             diagnosticoTalla,
             puntajeTalla.toFixed(5),
+            imc,
             diagnosticoIMC,
             puntajeIMC.toFixed(5),
             self.perCuello(),
@@ -1711,7 +1719,7 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
           self.calcularPuntajeZ("imc", datosAlumnoActual.sexo, meses, imc).then(function(puntajeIMC) {
             self.calcularPuntajeZ("talla", datosAlumnoActual.sexo, meses, self.talla()).then(function(puntajeTalla) {
               self.calcularPuntajeZ("peso", datosAlumnoActual.sexo, meses, self.peso()).then(function(puntajePeso) {
-                self.procesarMedicionBD(meses, puntajeIMC, puntajeTalla, puntajePeso);
+                self.procesarMedicionBD(meses, puntajeIMC, puntajeTalla, puntajePeso, imc);
               }).catch(function(error) {
                 alert("Error durante el calculo de puntajes, intente nuevamente o reinicie la aplicación.");
                 document.getElementById('dialogoCargando').close();
