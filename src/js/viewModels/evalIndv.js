@@ -1533,14 +1533,7 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
           diagnosticoIMC = "SOBREPESO";
         } else if(puntajeIMC > 2.0) {
           diagnosticoIMC = "OBESIDAD";
-        }
-
-        medicionesAlumnoActual.some(function(medicionActualAlumno) {
-          if(medicionActualAlumno.diagnostico_peso.endsWith("-M") || medicionActualAlumno.diagnostico_peso.endsWith("-E")) {
-            diagnosticoPeso = diagnosticoPeso + "-M";
-            return true;
-          }
-        });
+        }       
 
         if(self.botonFormularioMedicion() === "Agregar") {
           parametros = [
@@ -1562,6 +1555,14 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
             self.pliegueCuello()
           ];
         } else {
+          medicionesAlumnoActual.some(function (medicionActualAlumno) {
+            var compFecha = medicion.fecha.split("/");
+            if ((medicionActualAlumno.diagnostico_peso.endsWith("-M") || medicionActualAlumno.diagnostico_peso.endsWith("-E")) && 
+                  medicionActualAlumno.fecha === (compFecha[2] + '-' + compFecha[1] + '-' + compFecha[0])) {
+              diagnosticoPeso = diagnosticoPeso + "-M";
+              return true;
+            }
+          });
 
           consultaMedicion = "UPDATE datos SET\n" +
                              "id_grupo = ?,\n" +
