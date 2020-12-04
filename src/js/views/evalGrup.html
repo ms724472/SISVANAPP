@@ -116,7 +116,7 @@
                         style-defaults.line-type="curved"
                         translations.label-series="Diagnóstico"
                         translations.label-group="Fecha medicion"
-                        translations.label-value="Valor">
+                        translations.label-value="Num. Alumnos">
                   <template slot="itemTemplate" data-oj-as="item">
                       <oj-chart-item value="[[item.data.valor]]" group-id="[[ [item.data.fecha] ]]" series-id="[[corregirNombreSerie(item.data.serie)]]">
                       </oj-chart-item>
@@ -139,17 +139,17 @@
 <oj-dialog style="display:none;width: 95%;" id="dialogo-parametros" dialog-title="Generar gráficos colectivos">
   <div id="cuperpo-dialogo-grupo" slot="body">
     <oj-label for="desde">Desde: </oj-label>
-    <oj-input-date style="width: 100%;" id="desde" class="campo" value={{valorDesde}}>
+    <oj-input-date style="width: 100%;" id="desde" class="campo" value={{valorDesde}} converter=[[convertidorFechas]]>
     </oj-input-date>
     <oj-label for="hasta">Hasta: </oj-label>
-    <oj-input-date style="width: 100%;" id="hasta" class="campo" value={{valorHasta}} min="[[valorDesde]]" max="[[funcionTecho(valorDesde)]]">
+    <oj-input-date style="width: 100%;" id="hasta" class="campo" value={{valorHasta}} min="[[valorDesde]]" max="[[funcionTecho(valorDesde)]]" converter=[[convertidorFechas]]>
     </oj-input-date>
     <oj-label for="seleccionadorEscuela">Selecciona una escuela: </oj-label>
     <oj-select-one style="width: 100%;" id="seleccionadorEscuela" options="[[origenDatosEscuelas]]"
-      value="{{escuelaSeleccionada}}" on-value-changed="[[cambioEscuela]]" class="campo"></oj-select-one>
+      value="{{escuelaAEvaluar}}" on-value-changed="[[cambioEscuela]]" class="campo"></oj-select-one>
     <oj-label for="seleccionadorGrupo">Selecciona un grupo: </oj-label>
     <oj-select-one style="width: 100%;" id="seleccionadorGrupo" options="[[origenDatosGrupos]]"
-      value="{{grupoSeleccionado}}" disabled="[[sinGrupos]]" class="campo"></oj-select-one>
+      value="{{grupoSeleccionado}}" on-value-changed="[[actualizarEtiqueta]]" disabled="[[sinGrupos]]" class="campo"></oj-select-one>
     <oj-label for="seleccionadorGrupo">Selecciona un tipo de evaluaci&oacute;n: </oj-label>
     <oj-select-one id="seleccionadorEvaluacion" value="{{tipoEvalSeleccionada}}" style="width: 100%;">
       <oj-option value="imc">IMC</oj-option>

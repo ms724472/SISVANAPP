@@ -199,11 +199,13 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
           var fechaIngreso = new Date('08/01/' + resultados.rows.item(indiceFila).anio_ingreso);
           var diferencia = self.diferenciaMeses(fechaIngreso, hoy, false)/12;
           var grado = Math.ceil(diferencia);
-          var grupoBD = {};
-          grupoBD.value = resultados.rows.item(indiceFila).id_grupo;
-          grupoBD.label = grado + " " + resultados.rows.item(indiceFila).letra;
-          gruposEscuelaActual.push(grupoBD);
-
+          if(grado <= 6 && grado >= 1) {
+            var grupoBD = {};
+            grupoBD.value = resultados.rows.item(indiceFila).id_grupo;
+            grupoBD.label = grado + " " + resultados.rows.item(indiceFila).letra;
+            gruposEscuelaActual.push(grupoBD);
+          }
+          
           if(indiceFila === numFilas-2) {
             grupos[idEscuelaActual.toString()] = gruposEscuelaActual;
           }
