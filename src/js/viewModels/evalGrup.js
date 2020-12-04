@@ -29,9 +29,10 @@ define(['ojs/ojcore', 'knockout', 'appController', 'ojs/ojmodule-element-utils',
       var etiquetaGrupoSeleccionado;
       self.escuelas = [];
       self.estiloGraficos = ko.observable({"fontSize":"15px"});
-      self.tituloGraficoEscolar = ko.observable();
       self.tituloGraficoGrupal = ko.observable();
       self.sinGrupos = ko.observable(false);
+      self.origenDatosHistorico = ko.observable();
+      self.tituloGrafico = ko.observable();
 
       self.obtenerLasEscuelas = function () {
         var peticionListaEscuelas = new XMLHttpRequest();
@@ -101,6 +102,15 @@ define(['ojs/ojcore', 'knockout', 'appController', 'ojs/ojmodule-element-utils',
         return fechaHasta;
       };
 
+      self.corregirNombreSerie = function(serie) {
+        var nuevoNombre = "";
+        var partesNombre = serie.split("_");
+        partesNombre.forEach(function callback(currentValue, index, array) {
+            nuevoNombre = nuevoNombre + " " + currentValue.substring(0, 1).toUpperCase() + currentValue.substring(1);            
+        });   
+        return nuevoNombre.substring(1);             
+      };
+
       self.obtenerPorcentajesEscolares = function (idEscuela, diagnostico) {
         var servicio = "escolares/obtenerPorcentajesEscuela/?id_escuela=" + idEscuela +
           "&desde=" + self.valorDesde() +
@@ -160,6 +170,33 @@ define(['ojs/ojcore', 'knockout', 'appController', 'ojs/ojmodule-element-utils',
         peticionPorcentajesGrupos.send();
       };   
 
+      self.obtenerHistoricoEscolar = function(idEscuela, diagnostico) {
+        var servicio = "escolares/obtenerHistoricoEscuela/" + diagnostico + "/" + idEscuela;
+
+        var peticionHistoricoEscolares = new XMLHttpRequest();
+        peticionHistoricoEscolares.open("GET", oj.gWSUrl() + servicio, false);
+        peticionHistoricoEscolares.onreadystatechange = function () {
+            if (this.readyState === 4) {
+                if (this.status === 200) {
+                    var respuestaJSON = JSON.parse(this.responseText);
+                    if (respuestaJSON.hasOwnProperty("error")) {
+                        if (respuestaJSON.error === "No hay datos.") {
+                            self.origenDatosHistorico(new oj.ArrayDataProvider([{ NoData: "" }]));
+                        } else {
+                            alert(ERROR_INTERNO_SERVIDOR);
+                        }
+                    } else {
+                        self.origenDatosHistorico(new oj.ArrayDataProvider(respuestaJSON.mediciones, { keyAttributes: 'id' }));
+                        self.tituloGrafico("PRIMARIA " + nombreEscuelaSeleccionada);
+                    }
+                } else {
+                    alert(ERROR_INTERNO_SERVIDOR);
+                }
+            }
+        };
+        peticionHistoricoEscolares.send();
+    }
+
       self.obtenerRangos = function () {
         var peticionRangos = new XMLHttpRequest();
         peticionRangos.open("GET", oj.gWSUrl() + "obtenerRangos", false);
@@ -188,6 +225,7 @@ define(['ojs/ojcore', 'knockout', 'appController', 'ojs/ojmodule-element-utils',
               self.obtenerTodosLosGrupos();
               nombreEscuelaSeleccionada = self.escuelas[0].label;
               self.obtenerPorcentajesEscolares(self.escuelas[0].value, "imc");
+              self.obtenerHistoricoEscolar(self.escuelas[0].value, "imc");
               etiquetaGrupoSeleccionado = todosLosGrupos[self.escuelas[0].value][0].label;
               self.obtenerPorcentajesGrupales(todosLosGrupos[self.escuelas[0].value][0].value, "imc");
               //self.obtenerHistoricoEscolar(todosLosGrupos[self.escuelas[0].value][0].value, "imc");
@@ -205,12 +243,17 @@ define(['ojs/ojcore', 'knockout', 'appController', 'ojs/ojmodule-element-utils',
       self.actualizarGraficos = function (event) {
         self.obtenerPorcentajesEscolares(self.escuelaSeleccionada(), self.tipoEvalSeleccionada());
         self.obtenerPorcentajesGrupales(self.grupoSeleccionado(), self.tipoEvalSeleccionada());
+        self.obtenerHistoricoEscolar(self.escuelaSeleccionada(), self.tipoEvalSeleccionada());
         self.cerrarDialogo();
-        //self.obtenerHistoricoEscolar(escuelaSeleccionada, diagnosticoSeleccionado);
       };
 
-      self.cambioEscuela = event => {
-        nombreEscuelaSeleccionada = event.target.innerText;
+      self.cambioEscuela = event => {                
+        self.origenDatosEscuelas().data.some(function(escuela) {
+          if(escuela.value === event.target.value) {
+            nombreEscuelaSeleccionada = escuela.label;
+            return true;
+          }
+        });
         escuelaSeleccionada = event.target.value;
         grupoSeleccionado = "";
         if (todosLosGrupos.hasOwnProperty(event.target.value)) {

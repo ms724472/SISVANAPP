@@ -102,6 +102,33 @@
               </div>
             </div>
             <div slot="evol-escuela" id="panel-evolucion-escolar" role="tabpanel" aria-labelledby="tab-evol-escuela">
+              <oj-chart id="historico-escolar" 
+                        type="line" 
+                        data="[[origenDatosHistorico]]" 
+                        animation-on-display="auto"
+                        animation-on-data-change="auto" 
+                        orientation="vertical"
+                        hover-behavior="dim"
+                        legend.position="bottom"
+                        x-axis.title="[[tituloGrafico]]"
+                        style="max-width:700px;width:100%;height:350px;display: inline-block;"
+                        translations.label-no-data="Sin datos"
+                        style-defaults.line-type="curved"
+                        translations.label-series="Diagnóstico"
+                        translations.label-group="Fecha medicion"
+                        translations.label-value="Valor">
+                  <template slot="itemTemplate" data-oj-as="item">
+                      <oj-chart-item value="[[item.data.valor]]" group-id="[[ [item.data.fecha] ]]" series-id="[[corregirNombreSerie(item.data.serie)]]">
+                      </oj-chart-item>
+                  </template>
+                  <template slot="seriesTemplate" data-oj-as="series">
+                      <oj-chart-series 
+                          marker-size="0"
+                          marker-displayed="on"
+                          marker-shape="square">
+                      </oj-chart-series>
+                  </template>
+              </oj-chart>
             </div>
           </oj-switcher>
         </div>
