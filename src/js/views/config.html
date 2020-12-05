@@ -17,10 +17,34 @@
   <div class="oj-applayout-content">
     <div role="main" class="oj-hybrid-applayout-content">
       <div class="oj-hybrid-padding">
-        <h1>About Content Area</h1>
-        <div>
-            To change the content of this section, you will make edits to the about.html file located in the /js/views folder.
+        <h3>Asistente de primer uso</h3>
+        <div style="text-align: center;">
+          Antes de comenzar a utilizar la aplicaci&oacute;n es necesario comenzar a completar los parametros iniciales, por favor complete todos los campos:
         </div>
+        <br/>
+        <br/>
+        <oj-label for="modo-applicacion" show-required>Modo de la aplicaci&oacute;n:</oj-label>
+        <oj-select-one value="{{modoApp}}" id="modo-applicacion">
+          <oj-option value="dependiente">Dependiente (Con un servidor)</oj-option>
+          <oj-option value="independiente">Independiente (Solo app m&oacute;vil)</oj-option>
+        </oj-select-one>
+        <br/>
+        <br/>
+        <oj-label for="servidor" show-required>Direcci&oacute;n del servidor:</oj-label>
+        <oj-input-text id="servidor" disabled="[[modoApp() === 'dependiente' ? false : true]]"></oj-input-text>
+        <br/>
+        <br/>
+        <oj-label for="usuario" show-required>Usuario:</oj-label>
+        <oj-input-text id="servidor"></oj-input-text>
+        <br/>
+        <br/>
+        <oj-label for="servidor" show-required>Contrase&ncaron;a:</oj-label>
+        <oj-input-password id="contrasenia"></oj-input-password>
+        <br/>
+        <br/>
+        <oj-button style="width: 100%;" chroming="callToAction">
+          Finalizar
+        </oj-button>
       </div>
     </div>
   </div>

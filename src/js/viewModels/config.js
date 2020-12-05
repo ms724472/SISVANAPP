@@ -7,17 +7,18 @@
 /*
  * Your about ViewModel code goes here
  */
-define(['knockout', 'appController', 'ojs/ojmodule-element-utils', 'accUtils'],
+define(['knockout', 'appController', 'ojs/ojmodule-element-utils', 'accUtils', 'ojs/ojselectcombobox', 'ojs/ojinputtext'],
  function(ko, app, moduleUtils, accUtils) {
 
     function AboutViewModel() {
       var self = this;
+      self.modoApp = ko.observable("dependiente");
 
       // Header Config
       self.headerConfig = ko.observable({'view':[], 'viewModel':null});
       moduleUtils.createView({'viewPath':'views/header.html'}).then(function(view) {
         self.headerConfig({'view':view, 'viewModel':new app.getHeaderModel()})
-      })
+      })    
 
       // Below are a set of the ViewModel methods invoked by the oj-module component.
       // Please reference the oj-module jsDoc for additional information.
