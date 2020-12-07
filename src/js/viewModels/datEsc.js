@@ -9,13 +9,36 @@
  */
 define(['knockout', 'jquery', 'appController', 'ojs/ojmodule-element-utils', 'accUtils', 'ojs/ojarraydataprovider', 'ojs/ojaccordion',
   'ojs/ojbutton', 'ojs/ojlistview', 'ojs/ojlistitemlayout', 'ojs/ojtoolbar', 'ojs/ojdialog', 'ojs/ojinputtext', 
-  'ojs/ojselectcombobox', 'ojs/ojdatetimepicker'],
+  'ojs/ojselectcombobox', 'ojs/ojdatetimepicker', 'ojs/ojvalidation-datetime', ],
   function (ko, $, app, moduleUtils, accUtils, ArrayDataProvider) {
 
     function ModeloDatosEscolares() {
       var self = this;
-      self.datosMunicipios = ko.observableArray();
-      
+      var todasLasEscuelas = [];
+      var todosLosGrupos = {};
+      var escuelaActual = {};
+      self.datosMunicipios = ko.observable();
+      self.campoCCT = ko.observable();
+      self.campoNombre = ko.observable();
+      self.campoDireccion = ko.observable();
+      self.campoColonia = ko.observable();
+      self.campoCodigoPostal = ko.observable();
+      self.campoTelefono = ko.observable();
+      self.campoEstado = ko.observable();
+      self.campoMunicipio = ko.observable();
+      self.tituloDialogoEscuela = ko.observable("Agregar nueva escuela");
+      self.botonDialogoEscuela = ko.observable("Agregar");
+      self.tituloDialogoGrupo = ko.observable("Agregar nuevo grupo");
+      self.botonDialogoGrupo = ko.observable("Agregar");
+      self.fechaToma = ko.observable();
+      self.campoGrado = ko.observable();
+      self.campoLetra = ko.observable();
+      self.grupoSeleccionado = ko.observable();
+      self.tituloNotificacionGrupo = ko.observable();
+      self.mensajeGrupo = ko.observable();
+      self.grupoFinal = ko.observable();
+      self.ocultarCancelar = ko.observable(true);
+
       self.grados = [
         { value: 1 },
         { value: 2 },
@@ -172,62 +195,611 @@ define(['knockout', 'jquery', 'appController', 'ojs/ojmodule-element-utils', 'ac
         anio_graduacion: "Año graduación"
       };
 
+      self.validadorTelefonico = ko.computed(function () {
+        return [{
+          type: 'regExp',
+          options: {
+            pattern: '[0-9]{10}',
+            messageSummary: 'Valor inválido',
+            messageDetail: 'Deben ser 10 dígitos.'
+          }
+        }];
+      });
+
+      self.validadorPostal = ko.computed(function () {
+        return [{
+          type: 'regExp',
+          options: {
+            pattern: '[0-9]{5}',
+            messageSummary: 'Valor inválido',
+            messageDetail: 'Deben ser 5 dígitos.'
+          }
+        }];
+      });
+
+      self.validadorGeo = ko.computed(function () {
+        return [{
+          type: 'regExp',
+          options: {
+            pattern: '[A-Za-z, \\.0-9-]+',
+            messageSummary: 'Valor inválido',
+            messageDetail: 'Solo se permiten letras, números, punto, coma y espacio.'
+          }
+        }];
+      });
+
+      self.validadorNombre = ko.computed(function () {
+        return [{
+          type: 'regExp',
+          options: {
+            pattern: '[A-Za-z \\.0-9]+',
+            messageSummary: 'Valor inválido',
+            messageDetail: 'Solo se permiten letras, números, punto y espacio.'
+          }
+        }];
+      });
+
+      self.validadorCCT = ko.computed(function () {
+        return [{
+          type: 'regExp',
+          options: {
+            pattern: '[A-Z0-9]+',
+            messageSummary: 'Valor inválido',
+            messageDetail: 'Corrija el campo.'
+          }
+        }];
+      });
+
+      self.validadorLetra = ko.computed(function () {
+        return [{
+          type: 'regExp',
+          options: {
+            pattern: '[A-Z]{1}',
+            messageSummary: 'Valor inválido',
+            messageDetail: 'Corrija el campo.'
+          }
+        }];
+      });
+
+      self.convertidorFechas = ko.observable(oj.Validation.converterFactory(oj.ConverterFactory.CONVERTER_TYPE_DATETIME).
+        createConverter(
+          {
+            pattern: "dd/MM/yyyy"
+          }));
+
       // Header Config
       self.headerConfig = ko.observable({ 'view': [], 'viewModel': null });
       moduleUtils.createView({ 'viewPath': 'views/header.html' }).then(function (view) {
         self.headerConfig({ 'view': view, 'viewModel': new app.getHeaderModel() })
       });
+      
+      function manejarErrores(error) {
+        alert("Error durante la inicialización, intente reiniciando la aplicación, si la falla persiste contecte al soporte técnico");
+        console.log("Error en la base de datos: " + error.message);
+      }
 
       self.estadoSeleccionado = function (event) {
         var estado = event['detail'].value;
         if (estado !== "" && self.municipios.hasOwnProperty(estado) && Object.keys(self.municipios[estado]).length > 0) {
           self.datosMunicipios(new ArrayDataProvider(self.municipios[estado], { keyAttributes: 'value' }));
+          self.campoMunicipio(self.municipios[estado][0].value);
         }
       };
 
+      self.diferenciaAnios = function(fecha1, fecha2, redondearHaciaArriba) {
+        var fechaInicial = fecha1;
+        var fechaFinal = fecha2;
+        var invertida = false;
+        if (fecha1 > fecha2) {
+          fechaInicial = fecha2;
+          fechaFinal = fecha1;
+          invertida = true;
+        }
+
+        var aniosDiferencia = fechaFinal.getFullYear() - fechaInicial.getFullYear();
+        var mesesDiferencia = fechaFinal.getMonth() - fechaInicial.getMonth();
+        var diasDiferencia = fechaFinal.getDate() - fechaInicial.getDate();
+
+        var correcionMeses = 0;
+        if (redondearHaciaArriba === true && diasDiferencia > 0) {
+          correcionMeses = 1;
+        } else if (redondearHaciaArriba !== true && diasDiferencia < 0) {
+          correcionMeses = -1;
+        }
+
+        return ((invertida ? -1 : 1) * (aniosDiferencia * 12 + mesesDiferencia + correcionMeses)) / 12;
+      };
+
       self.obtenerGrupos = function (idEscuela) {
-        var respuesta;
-        var peticionDatosGrupos = new XMLHttpRequest();
-        peticionDatosGrupos.open('GET', oj.gWSUrl() + "obtenerDatosGrupos/" + idEscuela, false);
-        peticionDatosGrupos.onreadystatechange = function () {
-          if (this.readyState === 4) {
-            if (this.status === 200) {
-              var json = JSON.parse(this.responseText);
-              if (json.hasOwnProperty("error")) {
-                respuesta = [];
-              } else {
-                respuesta = json.grupos;
+        return new Promise((resolve, reject) => {
+          if (oj.gOfflineMode() === true) {            
+            var gruposEscuelas = [];
+            var consultaGrupos = "SELECT id_grupo, letra, anio_ingreso, anio_graduacion FROM grupos WHERE id_escuela = ?"
+            oj.gConexionDB().transaction(function (transaccion) {
+              transaccion.executeSql(consultaGrupos,
+                [idEscuela], function (transaccion, resultados) {
+                  var numFilas = resultados.rows.length;
+                  if (numFilas > 0) {
+                    for (var indiceFila = 0; indiceFila < numFilas; indiceFila++) {
+                      var fila = resultados.rows.item(indiceFila);
+                      var hoy = new Date();
+                      var fechaIngreso = new Date('08/01/' + fila.anio_ingreso);
+                      var diferencia = self.diferenciaAnios(fechaIngreso, hoy, false);
+                      var grado = Math.ceil(diferencia);
+                      var grupo = {
+                        id_grupo: fila.id_grupo,
+                        letra: fila.letra,
+                        anio_ingreso: fila.anio_ingreso,
+                        anio_graduacion: fila.anio_graduacion,
+                        grado: grado > 6 ? "EGRESADO" : grado
+                      };
+                      gruposEscuelas.push(grupo);
+                    }
+                    resolve(gruposEscuelas);
+                  }
+                  resolve(gruposEscuelas);
+                }, manejarErrores);
+            }, function (error) {
+              alert("Error durante la descarga de datos escolares, intente nuevamente o reinicie la aplicación.");
+              console.log("Error en la base de datos: " + error.message);
+              resolve(gruposEscuelas);
+            });
+          } else {
+            var peticionDatosGrupos = new XMLHttpRequest();
+            peticionDatosGrupos.open('GET', oj.gWSUrl() + "obtenerDatosGrupos/" + idEscuela, false);
+            peticionDatosGrupos.onreadystatechange = function () {
+              if (this.readyState === 4) {
+                if (this.status === 200) {
+                  var json = JSON.parse(this.responseText);
+                  if (!json.hasOwnProperty("error")) {
+                    resolve(json.grupos);
+                  } else {
+                    resolve([]);
+                  }
+                } else {
+                  resolve([]);
+                }
               }
-            }
+            };
+            peticionDatosGrupos.send();
           }
-        };
-        peticionDatosGrupos.send();
-        return respuesta;
+        });
+      };
+
+      self.agregarEscuela = function() {
+        var campoCCT = document.getElementById("campo-cct");
+        var campoNombre = document.getElementById("campo-nombre");
+        var campoDireccion = document.getElementById("campo-direccion");
+        var campoColonia = document.getElementById("campo-colonia");
+        var campoCPostal = document.getElementById("campo-codigo-postal");
+        var campoTelefono = document.getElementById("campo-telefono");
+
+        campoCCT.validate();
+        campoNombre.validate();
+        campoDireccion.validate();
+        campoColonia.validate();
+        campoCPostal.validate();
+        campoTelefono.validate();
+        if (campoCCT.valid === 'invalidShown' || campoNombre.valid === 'invalidShown' ||
+          campoDireccion.valid === 'invalidShown' || campoColonia.valid === 'invalidShown' ||
+          campoCPostal.valid === 'invalidShown' || campoTelefono.valid === 'invalidShown') {
+          return;
+        }
+
+        var consultaEscuela = "INSERT INTO escuelas(clave_sep, nombre, direccion, colonia, codigo_postal, telefono, municipio, estado)\n"
+                            + "VALUES(?,?,?,?,?,?,?,?)";
+
+        var parametros = [
+          self.campoCCT().toUpperCase(),
+          self.campoNombre().toUpperCase(),
+          self.campoDireccion().toUpperCase(),
+          self.campoColonia().toUpperCase(),
+          self.campoCodigoPostal(),
+          self.campoTelefono(),
+          self.campoMunicipio(),
+          self.campoEstado()
+        ];
+
+        if(self.botonDialogoEscuela() === "Guardar") {
+          consultaEscuela = "UPDATE escuelas SET\n"
+                            + "clave_sep = ?,\n"
+                            + "nombre = ?,\n"
+                            + "direccion = ?,\n"
+                            + "colonia = ?,\n"
+                            + "codigo_postal = ?,\n"
+                            + "telefono = ?,\n"
+                            + "municipio = ?,\n"
+                            + "estado = ?\n"
+                            + "WHERE id_escuela = ?";
+
+          parametros.push(escuelaActual.id_escuela);
+        }
+
+        oj.gConexionDB().transaction(function (transaccion) {
+          transaccion.executeSql(consultaEscuela,
+            parametros, function(transaccion, resultados) {
+              if(self.botonDialogoEscuela() === "Agregar") {
+                alert("Escuela agregada exitosamente.");
+              } else {
+                alert("Escuela actualizada exitosamente,");
+                self.grupoSeleccionado(undefined);
+              }              
+              self.cerrarDialogoEscuela();
+              self.cargarEscuelas();
+            }, manejarErrores);
+          }, function(error) {
+            if(self.botonDialogoEscuela() === "Agregar") {
+              alert("Error al agregar la escuela, revisa los datos.");
+            } else {
+              alert("Error al actualizar la escuela, revise los datos.");
+            }
+            console.log(error.message);
+          });                            
+      };
+
+      self.agregarGrupo = function() {
+        var fechaToma = new Date();
+        var mesToma = fechaToma.getMonth() + 1;
+        var anioToma = fechaToma.getFullYear();
+        anioToma = mesToma >= 8 && mesToma <= 12 ? anioToma : anioToma - 1;
+        var campoLetra = document.getElementById("campo-letra");        
+
+        campoLetra.validate();
+
+        if (campoLetra.valid === 'invalidShown') {
+          return;
+        }
+
+        if(self.fechaToma() !== "" && self.fechaToma() !== undefined) {
+          fechaToma = new Date(self.fechaToma());
+          mesToma = fechaToma.getMonth() + 1;
+          anioToma = fechaToma.getFullYear();
+          anioToma = mesToma >= 8 && mesToma <= 12 ? anioToma : anioToma - 1;
+        }
+
+        var anioIngreso = (anioToma - self.campoGrado() + 1);
+        var consultaGrupo = "INSERT INTO grupos(letra, anio_ingreso, id_escuela) VALUES(?,?,?)";
+
+        var parametros = [
+          self.campoLetra(),
+          anioIngreso,
+          escuelaActual.id_escuela
+        ];
+
+        if(self.botonDialogoGrupo() === "Guardar") {
+          consultaGrupo = "UPDATE grupos SET\n"
+                          + "letra = ?,\n"
+                          + "anio_ingreso = ?\n"
+                          + "WHERE id_grupo = ?"
+
+          parametros = [
+            self.campoLetra(),
+            anioIngreso,
+            self.grupoSeleccionado()
+          ];                                                    
+        }
+        
+        oj.gConexionDB().transaction(function (transaccion) {
+          transaccion.executeSql(consultaGrupo,
+            parametros, function(transaccion, resultados) {
+              if(self.botonDialogoGrupo() === "Agregar") {                
+                self.tituloNotificacionGrupo("Grupo creado");
+              } else {                
+                self.tituloNotificacionGrupo("Grupo actualizado");
+              }    
+
+              var hoy = new Date();
+              var fechaIngreso = new Date('08/01/' + anioIngreso);
+              var diferencia = self.diferenciaAnios(fechaIngreso, hoy, false);
+              var grado = Math.ceil(diferencia);        
+              
+              if(grado > 6) {
+                self.grupoFinal("EGRESADO");
+                self.mensajeGrupo("No podrá usar este grupo, ya que esta egresado, por favor edítelo:");
+              } else {
+                self.grupoFinal(grado + " " + self.campoLetra());
+                self.mensajeGrupo("Debes seleccionar:");
+              }
+              
+              self.ocultarCancelar(true);
+              document.getElementById("dialogo-notif-grupo").open();
+              self.cerrarDialogoGrupo();
+              self.cargarEscuelas();
+            }, manejarErrores);
+          }, function(error) {
+            if(self.botonDialogoEscuela() === "Agregar") {
+              alert("Error al agregar el grupo, revisa los datos.");
+            } else {
+              alert("Error al actualizar el grupo, revise los datos.");
+            }
+            console.log(error.message);
+          });
+      };
+
+      self.eliminarGrupo = function() {
+        if(self.grupoSeleccionado() === undefined) {
+          alert("Favor de seleccionar un grupo.");
+          return;
+        }
+
+        self.tituloNotificacionGrupo("Eliminar grupo");
+        self.mensajeGrupo("Al eliminar un grupo se eliminaran a los alumnos y mediciones dependientes, esta operación puede corromper la base de datos, ¿desea continuar?");
+        self.grupoFinal("");
+        self.ocultarCancelar(false);
+        var idGrupo = document.getElementById(escuelaActual.id_escuela.toString())
+                              .getElementsByTagName("oj-list-view")[1]
+                              .getElementsByClassName("oj-selected")[0].id.replace("grupo", "");
+        self.grupoSeleccionado(idGrupo);
+        document.getElementById("dialogo-notif-grupo").open();
+      };
+
+      self.eliminarEscuela = function() {
+        if(Object.keys(escuelaActual).length === 0) {
+          alert("Favor de seleccionar una escuela.");
+          return;
+        }
+
+        self.tituloNotificacionGrupo("Eliminar escuela");
+        self.mensajeGrupo("Al eliminar una escuela se eliminaran a los grupos, alumnos y mediciones dependientes, esta operación puede corromper la base de datos, ¿desea continuar?");
+        self.grupoFinal("");
+        self.ocultarCancelar(false);
+        document.getElementById("dialogo-notif-grupo").open();
+      };
+
+      self.cancelarEliminar = function() {
+        document.getElementById("dialogo-notif-grupo").close();
+      };
+
+      function eliminarEscuela(transaccion, resultados) {
+        var consultaEliminarGrupo = "DELETE FROM escuelas WHERE id_escuela = ?";
+        oj.gConexionDB().transaction(function (transaccion) {
+          transaccion.executeSql(consultaEliminarGrupo,
+            [escuelaActual.id_escuela], function(transaccion, resultados) {              
+              self.cargarEscuelas();             
+              alert("La escuela ha sido eliminada satisfactoriamente.");    
+              self.grupoSeleccionado(undefined);          
+            }, manejarErrores);
+        }, function (error) {
+          alert("Error al eliminar la escuela, consulte al soporte técnico.");
+          console.log(error.message);
+        });
+      }
+
+      var consultaEliminarGrupoT = "SELECT * FROM grupos WHERE id_escuela = ?";
+        oj.gConexionDB().transaction(function (transaccion) {
+          transaccion.executeSql(consultaEliminarGrupoT,
+            [13], function(transaccion, resultados) {   
+              console.log(transaccion);
+              var numFilas = resultados.rows.length;           
+              console.log(numFilas);              
+              var fila = resultados.rows.item(0);
+              console.log(fila);
+              console.log(resultados.rows.item(1));
+            }, manejarErrores);
+        }, function (error) {
+          alert("Error al eliminar el grupo, consulte al soporte técnico.");
+          console.log(error.message);
+        });
+        /*
+        var consultaEliminarGrupo = "DELETE FROM grupos WHERE id_escuela = 4";
+        oj.gConexionDB().transaction(function (transaccion) {
+          transaccion.executeSql(consultaEliminarGrupo,
+            [], function(transaccion, resultados) {              
+              var numFilas = resultados.rows.length;           
+              console.log(numFilas);
+              var fila = resultados.rows.item(0);
+              console.log(fila);
+            }, manejarErrores);
+        }, function (error) {
+          alert("Error al eliminar el grupo, consulte al soporte técnico.");
+          console.log(error.message);
+        });*/
+
+      function eliminarGrupo(idGrupo) {
+        var consultaEliminarGrupo = "DELETE FROM grupos WHERE id_grupo = ?";
+        console.log("Entro7 "+ idGrupo);
+        oj.gConexionDB().transaction(function (transaccion) {
+          transaccion.executeSql(consultaEliminarGrupo,
+            [idGrupo], function(transaccion, resultados) {                            
+              console.log("Entro8 " + idGrupo);
+              if(self.tituloNotificacionGrupo() === "Eliminar grupo") {                
+                alert("El grupo ha sido eliminado satisfactoriamente."); 
+                self.cargarEscuelas();   
+              }
+              self.grupoSeleccionado(undefined);          
+            }, manejarErrores);
+        }, function (error) {
+          alert("Error al eliminar el grupo, consulte al soporte técnico.");
+          console.log(error.message);
+        });
+      }
+
+      function eliminarAlumnos(transaccion, resultados, grupoActual) {
+        console.log("Entro5");
+        var consultaEliminarAlumnos = "DELETE FROM alumnos WHERE id_alumno = ?";
+        var consultaEliminarMediciones = "DELETE FROM datos WHERE id_alumno = ?";
+        var numFilas = resultados.rows.length;
+        var contadorAsincrono = 0;
+
+        if(numFilas === 0) {
+          console.log("Entro6");
+          eliminarGrupo(grupoActual);
+        }
+
+        for (var indiceFila = 0; indiceFila < numFilas; indiceFila++) {
+          var fila = resultados.rows.item(indiceFila);
+          oj.gConexionDB().transaction(function (transaccionA) {
+            transaccionA.executeSql(consultaEliminarMediciones,
+              [fila.id_alumno], function (transaccionB, resultados) {
+                oj.gConexionDB().transaction(function (transaccionC) {
+                  transaccionC.executeSql(consultaEliminarAlumnos,
+                    [fila.id_alumno], function(transaccionD, resultados) {
+                      console.log(fila.id_alumno);
+                      console.log(indiceFila);
+                      console.log(numFilas-1);
+                      if(contadorAsincrono === numFilas-1) {
+                        eliminarGrupo(grupoActual);
+                      } else {
+                        contadorAsincrono++;
+                      }
+                    }, manejarErrores);
+                }, function (error) {
+                  alert("Error al eliminar el grupo, consulte al soporte técnico.");
+                  console.log(error.message);
+                });
+              }, manejarErrores);
+          }, function (error) {
+            alert("Error al eliminar el grupo, consulte al soporte técnico.");
+            console.log(error.message);
+          });
+        }
+      }
+
+      self.eliminarTodoElGrupo = function (idGrupo) {
+        var consultaEliminarAlumnos = "SELECT id_alumno FROM alumnos WHERE id_grupo = ?";
+        oj.gConexionDB().transaction(function (transaccion) {
+          console.log("Entro4");
+          transaccion.executeSql(consultaEliminarAlumnos,
+            [idGrupo], function(transaccion, resultados) {
+              eliminarAlumnos(transaccion, resultados, idGrupo);
+            }, manejarErrores);
+        }, function (error) {
+          alert("Error al eliminar el grupo, consulte al soporte técnico.");
+          console.log(error.message);
+        });
+      };
+
+      self.eliminarTodaLaEscuela = function() {
+        var consultaEliminarAlumnos = "SELECT id_grupo FROM grupos WHERE id_escuela = ?";
+        oj.gConexionDB().transaction(function (transaccion) {
+          transaccion.executeSql(consultaEliminarAlumnos,
+            [escuelaActual.id_escuela], function(transaccion, resultados) {
+              var numFilas = resultados.rows.length;
+              if (numFilas === 0) {
+                eliminarEscuela();
+              }
+
+              for (var indiceFila = 0; indiceFila < numFilas; indiceFila++) {
+                self.grupoSeleccionado(resultados.rows.item(indiceFila).id_grupo);
+                self.eliminarTodoElGrupo(resultados.rows.item(indiceFila).id_grupo);
+                if(indiceFila === numFilas-1) {
+                  eliminarEscuela();
+                }
+              }
+            }, manejarErrores);
+        }, function (error) {
+          alert("Error al eliminar la escuela, consulte al soporte técnico.");
+          console.log(error.message);
+        });
+      };
+
+      self.aceptarGrupo = function() {
+        if(self.tituloNotificacionGrupo() === "Eliminar grupo") {
+          self.eliminarTodoElGrupo(self.grupoSeleccionado());       
+        } else if(self.tituloNotificacionGrupo() === "Eliminar escuela") {
+          self.eliminarTodaLaEscuela();
+        }       
+        
+        document.getElementById("dialogo-notif-grupo").close();
       };
 
       self.crearNuevaEscuela = function() {
+        self.tituloDialogoEscuela("Agregar nueva escuela");
+        self.botonDialogoEscuela("Agregar");
         document.getElementById("dialogo-nueva-escuela").open();
       };
 
-      self.cerrarDialogoEscuela= function() {
+      self.editarEscuela = function() {
+        if(Object.keys(escuelaActual).length === 0) {
+          alert("Favor de seleccionar una escuela.");
+          return;
+        }
+
+        self.tituloDialogoEscuela("Editar escuela");
+        self.botonDialogoEscuela("Guardar");
+        self.campoCCT(escuelaActual.clave_sep);
+        self.campoNombre(escuelaActual.nombre);
+        self.campoDireccion(escuelaActual.direccion);
+        self.campoColonia(escuelaActual.colonia);
+        self.campoCodigoPostal(escuelaActual.codigo_postal);
+        self.campoTelefono(escuelaActual.telefono);
+        self.campoMunicipio(escuelaActual.municipio);
+        self.campoEstado(escuelaActual.estado);
+        document.getElementById("dialogo-nueva-escuela").open();
+      };
+
+      self.cerrarDialogoEscuela = function() {
+        self.campoCCT("");
+        self.campoNombre("");
+        self.campoDireccion("");
+        self.campoColonia("");
+        self.campoCodigoPostal("");
+        self.campoTelefono("");
+        self.campoMunicipio(self.municipios[self.campoEstado()][0].value);
         document.getElementById("dialogo-nueva-escuela").close();
       };
 
       self.crearNuevoGrupo = function() {
+        self.botonDialogoGrupo("Agregar");
+        self.tituloDialogoGrupo("Agregar nuevo grupo");
+        document.getElementById("dialogo-nuevo-grupo").open();
+      };
+
+      self.editarGrupo = function() {
+        var grupoSeleccionado = document.getElementById(escuelaActual.id_escuela.toString())
+                                        .getElementsByTagName("oj-list-view")[1]
+                                        .getElementsByClassName("oj-selected")[0];
+
+        if(grupoSeleccionado === undefined) {
+          alert("Favor de seleccionar un grupo");
+          return;
+        }                                
+
+        self.botonDialogoGrupo("Guardar");
+        self.tituloDialogoGrupo("Editar grupo");
+        var idGrupo = grupoSeleccionado.id.replace("grupo", "");
+        self.grupoSeleccionado(idGrupo);
+        
+        todosLosGrupos[escuelaActual.id_escuela].some(function(grupo) {
+          if(parseInt(idGrupo) === grupo.id_grupo) {
+            self.campoGrado(grupo.grado <= 6 ? grupo.grado : 6);
+            self.campoLetra(grupo.letra);
+            return true;
+          }
+        });                                  
         document.getElementById("dialogo-nuevo-grupo").open();
       };
 
       self.cerrarDialogoGrupo= function() {
+        self.campoGrado(1);
+        self.campoLetra("");
+        self.fechaToma("");
         document.getElementById("dialogo-nuevo-grupo").close();
       };
+
+      self.abrirEscuela = function(event) {
+        todasLasEscuelas.some(function(escuela) {
+          if(event.target.id === escuela.id_escuela.toString()) {  
+            escuelaActual = escuela;          
+            return true;
+          }
+        });
+      };
+
+      self.cerrarEscuela = function(event) {
+        escuelaActual = {};
+      }
 
       self.procesarDatosEscolares = function (json) {
         document.getElementById("lista-escuelas").remove();
         var contenedor = document.getElementById("contenedor-escuelas");
         var accordion = document.createElement('oj-accordion');
         accordion.setAttribute("id", "lista-escuelas");
+        todasLasEscuelas = json.escuelas;
         Object.entries(json.escuelas).forEach(([indiceEscuela, escuela]) => {
           var colapsableEscuela = document.createElement('oj-collapsible');
+          colapsableEscuela.addEventListener('ojExpand', self.abrirEscuela);
+          colapsableEscuela.addEventListener('ojCollapse', self.cerrarEscuela);
           var nombreEscuela = document.createElement('h3');
           nombreEscuela.setAttribute('slot', 'header');
           nombreEscuela.innerText = escuela.nombre;
@@ -250,6 +822,7 @@ define(['knockout', 'jquery', 'appController', 'ojs/ojmodule-element-utils', 'ac
 
           var botonEditarGrupo = document.createElement("oj-button");
           botonEditarGrupo.setAttribute("display", "icons");
+          botonEditarGrupo.setAttribute("on-oj-action", "[[editarGrupo]]");
           var iconoBotonEGrupo = document.createElement("span");
           iconoBotonEGrupo.setAttribute("slot", "startIcon");
           iconoBotonEGrupo.classList.add("oj-ux-ico-add-edit-page");
@@ -260,6 +833,7 @@ define(['knockout', 'jquery', 'appController', 'ojs/ojmodule-element-utils', 'ac
 
           var botonEliminarGrupo = document.createElement("oj-button");
           botonEliminarGrupo.setAttribute("display", "icons");
+          botonEliminarGrupo.setAttribute("on-oj-action", "[[eliminarGrupo]]");
           var iconoBotonRGrupo = document.createElement("span");
           iconoBotonRGrupo.setAttribute("slot", "startIcon");
           iconoBotonRGrupo.classList.add("oj-ux-ico-file-remove");
@@ -273,26 +847,37 @@ define(['knockout', 'jquery', 'appController', 'ojs/ojmodule-element-utils', 'ac
 
           Object.entries(escuela).forEach(([nCampo, nValor]) => {
             if (nCampo === "id_escuela") {
-              var arregloGrupos = self.obtenerGrupos(nValor);
-              Object.entries(arregloGrupos).forEach(([nCampo, nValor]) => {
-                if (nCampo === "id_grupo") {
-                  return;
+              colapsableEscuela.setAttribute("id", nValor);
+              self.obtenerGrupos(nValor).then(function (arregloGrupos) {
+                todosLosGrupos[nValor] = arregloGrupos;
+                Object.entries(arregloGrupos).forEach(([nCampo, nValor]) => {
+                  if (nCampo === "id_grupo") {
+                    return;
+                  }
+
+                  var linea = document.createElement('li');
+                  linea.setAttribute("id", "grupo" + nValor.id_grupo);
+                  var contenido = document.createElement('oj-list-item-layout');
+                  var valor = document.createElement('span');
+                  valor.innerText = "Grupo: " + nValor.grado + " " + nValor.letra;
+
+                  var campo = document.createElement('span');
+                  campo.innerText = "Generación: " + nValor.anio_ingreso + " - " + nValor.anio_graduacion;
+                  campo.classList.add("oj-text-color-secondary");
+                  campo.setAttribute('slot', 'secondary');
+
+                  contenido.appendChild(valor);
+                  contenido.appendChild(campo);
+                  linea.appendChild(contenido);
+                  listaGrupos.appendChild(linea);
+                }); 
+
+                // Hasta que se aplican los bindings debido a que las llamadas de BD son
+                // asincronas, solo se aplican hasta que el último elemento de la lista
+                // fue procesado.
+                if(parseInt(indiceEscuela) === (todasLasEscuelas.length-1)){
+                  ko.applyBindings(self, accordion);
                 }
-
-                var linea = document.createElement('li');
-                var contenido = document.createElement('oj-list-item-layout');
-                var valor = document.createElement('span');
-                valor.innerText = "Grupo: " + nValor.grado + " " + nValor.letra;
-
-                var campo = document.createElement('span');
-                campo.innerText = "Generación: " + nValor.anio_ingreso + " - " + nValor.anio_graduacion;
-                campo.classList.add("oj-text-color-secondary");
-                campo.setAttribute('slot', 'secondary');
-
-                contenido.appendChild(valor);
-                contenido.appendChild(campo);
-                linea.appendChild(contenido);
-                listaGrupos.appendChild(linea);
               });
               return;
             }
@@ -336,21 +921,54 @@ define(['knockout', 'jquery', 'appController', 'ojs/ojmodule-element-utils', 'ac
           accordion.appendChild(colapsableEscuela);
         });
         contenedor.appendChild(accordion);
-        ko.applyBindings(self, accordion);
       };
 
       self.cargarEscuelas = function () {
-        var peticionEscuelas = new XMLHttpRequest();
-        peticionEscuelas.open("GET", oj.gWSUrl() + "obtenerDatosEscuelas", false);
-        peticionEscuelas.onreadystatechange = function () {
-          if (this.readyState === 4) {
-            if (this.status === 200) {
-              var json = JSON.parse(this.responseText);
-              self.procesarDatosEscolares(json);
+        if(oj.gOfflineMode() === true) {   
+          var jsonEscuelas = {
+            escuelas: []
+          };      
+          var consultaEscuelas = "SELECT id_escuela, clave_sep, nombre, direccion, colonia, codigo_postal, telefono, municipio, estado FROM escuelas"
+          oj.gConexionDB().transaction(function (transaccion) {
+            transaccion.executeSql(consultaEscuelas,
+              [], function(transaccion, resultados) {
+                var numFilas = resultados.rows.length;
+                if(numFilas > 0) {
+                  for (var indiceFila = 0; indiceFila < numFilas; indiceFila++) {
+                    var fila = resultados.rows.item(indiceFila);
+                    var escuela = {
+                      id_escuela: fila.id_escuela,
+                      clave_sep: fila.clave_sep,
+                      nombre: fila.nombre,
+                      direccion: fila.direccion,
+                      colonia: fila.colonia,
+                      codigo_postal: fila.codigo_postal,
+                      telefono: fila.telefono,
+                      municipio: fila.municipio,
+                      estado: fila.estado
+                    };
+                    jsonEscuelas.escuelas.push(escuela);
+                  }
+                  self.procesarDatosEscolares(jsonEscuelas);
+                }                                
+              }, manejarErrores);
+          }, function (error) {
+            alert("Error durante la descarga de datos escolares, intente nuevamente o reinicie la aplicación.");
+            console.log("Error en la base de datos: " + error.message);
+          });
+        } else {
+          var peticionEscuelas = new XMLHttpRequest();
+          peticionEscuelas.open("GET", oj.gWSUrl() + "obtenerDatosEscuelas", false);
+          peticionEscuelas.onreadystatechange = function () {
+            if (this.readyState === 4) {
+              if (this.status === 200) {
+                var json = JSON.parse(this.responseText);
+                self.procesarDatosEscolares(json);
+              }
             }
-          }
-        };
-        peticionEscuelas.send();
+          };
+          peticionEscuelas.send();
+        }      
       };
 
       $(document).ready(function () {

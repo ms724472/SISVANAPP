@@ -64,7 +64,7 @@
          ** and the CSS documentation under Support/API Docs/Non-Component Styling
          ** on the JET website for more information on how to use this pattern.
       -->
-      <div class="oj-applayout-fixed-bottom">
+      <div class="oj-applayout-fixed-bottom" :style.display="[[navDataProvider().data.length === 0 ? 'none' : 'block']]">
         <div role="navigation" class="oj-hybrid-applayout-navbar-app">
           <oj-navigation-list id="navList" class="oj-navigationlist-stack-icon-label"
                               data="[[navDataProvider]]"

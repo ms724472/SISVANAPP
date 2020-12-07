@@ -105,7 +105,6 @@ define(['ojs/ojcore', 'knockout', 'appController', 'ojs/ojmodule-element-utils',
         escuelaSeleccionada = event.target.value;
         grupoSeleccionado = "";
         if (todosLosGrupos.hasOwnProperty(event.target.value)) {
-          console.log("TEST");
           self.origenDatosGrupos(new oj.ArrayDataProvider(todosLosGrupos[event.target.value]));
           self.sinGrupos(false);
         } else {
@@ -390,6 +389,9 @@ define(['ojs/ojcore', 'knockout', 'appController', 'ojs/ojmodule-element-utils',
 
       function procesarGrupos(transaccion, resultados) {
         var numFilas = resultados.rows.length;
+        if(numFilas === 0) {
+          return;
+        }
         
         var gruposEscuelaActual = [];
         var idEscuelaActual;
@@ -398,7 +400,7 @@ define(['ojs/ojcore', 'knockout', 'appController', 'ojs/ojmodule-element-utils',
           if(indiceFila === 0) {
             idEscuelaActual = resultados.rows.item(indiceFila).id_escuela;
           } else if(resultados.rows.item(indiceFila).id_escuela !== idEscuelaActual) {
-            grupos[idEscuelaActual] = gruposEscuelaActual;
+            todosLosGrupos[idEscuelaActual] = gruposEscuelaActual;
             gruposEscuelaActual = [];
             idEscuelaActual = resultados.rows.item(indiceFila).id_escuela;
           }
@@ -416,7 +418,7 @@ define(['ojs/ojcore', 'knockout', 'appController', 'ojs/ojmodule-element-utils',
             gruposEscuelaActual.push(grupoBD);
           }
           
-          if(indiceFila === numFilas-2) {
+          if(indiceFila === numFilas-1) {
             todosLosGrupos[idEscuelaActual] = gruposEscuelaActual;
           }
         }         
@@ -429,17 +431,21 @@ define(['ojs/ojcore', 'knockout', 'appController', 'ojs/ojmodule-element-utils',
 
         self.obtenerPorcentajesEscolaresBD(escuelas[0].value, "imc");
         self.obtenerPorcentajesGrupalesBD(todosLosGrupos[escuelas[0].value][0].value, "imc");  
-        self.obtenerHistoricoEscolarBD(escuelas[0].value, "imc");             
+        self.obtenerHistoricoEscolarBD(escuelas[0].value, "imc");  
       }
 
       function procesarEscuelas(transaccion, resultados) {        
         var numFilas = resultados.rows.length;
 
+        if(numFilas === 0) {
+          return;
+        }
+
         for (var indiceFila = 0; indiceFila < numFilas; indiceFila++) {
           var escuelaDB = {
             value: resultados.rows.item(indiceFila).id_escuela,
             label: resultados.rows.item(indiceFila).nombre
-          };
+          };        
           escuelas.push(escuelaDB);   
         }
 

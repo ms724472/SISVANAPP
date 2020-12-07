@@ -7,18 +7,158 @@
 /*
  * Your about ViewModel code goes here
  */
-define(['knockout', 'appController', 'ojs/ojmodule-element-utils', 'accUtils', 'ojs/ojselectcombobox', 'ojs/ojinputtext'],
- function(ko, app, moduleUtils, accUtils) {
+define(['knockout', 'appController', 'ojs/ojmodule-element-utils', 'accUtils', 'ojs/ojasyncvalidator-regexp', 'ojs/ojarraydataprovider', 'ojs/ojselectcombobox', 
+'ojs/ojinputtext', 'ojs/ojprogress', 'ojs/ojdialog'],
+ function(ko, app, moduleUtils, accUtils, AsyncRegExpValidator, ArrayDataProvider) {
 
     function AboutViewModel() {
       var self = this;
-      self.modoApp = ko.observable("dependiente");
+      self.modoApp = ko.observable("dependiente");  
+      self.servidor = ko.observable("");   
+      self.usuario = ko.observable("");
+      self.contrasenia = ko.observable("");
+      self.confContrasenia = ko.observable("");  
 
       // Header Config
       self.headerConfig = ko.observable({'view':[], 'viewModel':null});
       moduleUtils.createView({'viewPath':'views/header.html'}).then(function(view) {
         self.headerConfig({'view':view, 'viewModel':new app.getHeaderModel()})
       })    
+
+      self.validadorEmail = ko.observableArray([
+        new AsyncRegExpValidator({
+          pattern: "[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*",
+          label: "Password",
+          messageSummary: "{label} too Weak",
+          messageDetail: "Introduce un correo electrónico correcto."
+        })
+      ]);
+
+      self.validadorContrasenia = ko.observableArray([
+        new AsyncRegExpValidator({
+          pattern: '(?=.*\\d)(?=.*[a-z])(?=.*[A-Z]).{6,}',
+          messageDetail: "Mejore la contraseña"
+        })
+      ]);
+
+      self.validadorDireccionServidor = ko.observableArray([
+        new AsyncRegExpValidator({
+          pattern: "^(?:http(s)?:\\/\\/)?[\\w.-]+(?:\\.[\\w\\.-]+)+[\\w\\-\\._~:/?#[\\]@!\\$&'\\(\\)\\*\\+,;=.]+$",
+          messageDetail: "Direccion inválida"
+        })
+      ]);
+
+      self.redireccionar = function () {
+        oj.gAppConfigurada(true);
+        
+        app.router = oj.Router.rootInstance;
+
+        navData = [
+          {
+            name: 'Colectivas', id: 'evalGrup',
+            iconClass: 'oj-navigationlist-item-icon demo-icon-font-24 demo-people-icon-24'
+          },
+          {
+            name: 'Individuales', id: 'evalIndv',
+            iconClass: 'oj-navigationlist-item-icon demo-icon-font-24 demo-person-icon-24'
+          },
+          {
+            name: 'Estadísticas', id: 'estUtils',
+            iconClass: 'oj-navigationlist-item-icon demo-icon-font-24 demo-chart-icon-24'
+          }
+        ];
+
+        if (oj.gModoDependiente() !== true) {
+          app.router.configure({
+            'evalGrup': { label: 'Evaluaciones colectivas', isDefault: true },
+            'evalIndv': { label: 'Evaluación individual' },
+            'estUtils': { label: 'Estadísticas OMS' },
+            'datEsc': { label: 'Datos escolares' }
+          });
+          navData.push({
+            name: 'Escolares', id: 'datEsc',
+            iconClass: 'oj-navigationlist-item-icon demo-icon-font-24 demo-library-icon-24'
+          });
+        } else {
+          app.router.configure({
+            'evalGrup': { label: 'Evaluaciones colectivas', isDefault: true },
+            'evalIndv': { label: 'Evaluación individual' },
+            'estUtils': { label: 'Estadísticas OMS' }
+          });
+        }
+
+        app.navDataProvider(new ArrayDataProvider(navData, { keyAttributes: 'id' }));  
+        oj.Router.sync();
+      }
+
+      self.completarInstalacion = function() {
+        var campoUsuario = document.getElementById("usuario");
+        var campoContrasenia = document.getElementById("contrasenia");
+        var campoConfContrasenia = document.getElementById("confContrasenia");
+
+        campoUsuario.validate();
+        campoContrasenia.validate();
+        campoConfContrasenia.validate();
+
+        if(campoUsuario.valid === 'invalidShown') {
+          alert("Proporciona un correo electrónico válido.");
+          return;
+        }
+        
+        if(campoContrasenia.valid === 'invalidShown') {
+          alert("Favor de corregir la contraseña.");
+          return;
+        }
+
+        if(self.contrasenia() !== self.confContrasenia()) {
+          alert("El campo de contraseña y la confirmación deben coincidir.");
+          return;
+        }
+
+        if (self.modoApp() === "dependiente" ) {
+          var campoServidor = document.getElementById("servidor");
+          campoServidor.validate();
+          if (campoServidor.valid === 'invalidShown' || self.servidor() === "") {
+            alert("Proporcione una dirección válida del servidor");
+            return;
+          }
+        } else {
+          document.getElementById("dialogoCargando").open();
+          var falla = false;
+          var indiceValor = 0;
+          var parametros = ["configurada", "modo", "desconectada", "usuario", "contrasenia"];
+          valores = ["si", "independiente", "si", self.usuario(), self.contrasenia()];
+
+          parametros.some(function (parametro) {
+            if(falla === true) {
+              return true;
+            }
+
+            var consultaActualizarParametros = "UPDATE parametros SET valor = ? WHERE nombre = ?";
+
+            oj.gConexionDB().transaction(function (transaccion) {
+              transaccion.executeSql(consultaActualizarParametros,
+                [valores[indiceValor], parametro], function (transaccion, resultados) {
+                  if(parametro === "contrasenia") {
+                    alert("Aplicación configurada exitosamente.");
+                    document.getElementById("dialogoCargando").close();
+                    oj.gOfflineMode(true);
+                    oj.gModoDependiente(false);
+                    self.redireccionar();
+                  }
+                 }, function (error) {
+                  falla = true;
+                  alert("Error en la configuracion, borrer los datos de la aplicación y reintente nuevamente.");
+                  console.log("Error en la base de datos: " + error.message);
+                });
+            }, function (error) {              
+              falla = true;
+              alert("Error durante la configuracion, por favor borre los datos de almacenamiento y vuelva a intentar.");
+              console.log("Error en la base de datos: " + error.message);
+            });
+          });
+        }
+      };
 
       // Below are a set of the ViewModel methods invoked by the oj-module component.
       // Please reference the oj-module jsDoc for additional information.

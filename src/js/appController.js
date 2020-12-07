@@ -12,11 +12,13 @@ define(['knockout', 'ojs/ojcore', 'ojs/ojrouter', 'ojs/ojthemeutils', 'ojs/ojmod
   function (ko, oj, Router, ThemeUtils, moduleUtils, ModuleAnimations, ArrayDataProvider, KnockoutTemplateUtils) {
     function ControllerViewModel() {
       var self = this;
+      var navData = [];
       oj.gOfflineMode = ko.observable(false);
       oj.gModoDependiente = ko.observable(true);
       oj.gWSUrl = ko.observable();
       oj.gConexionDB = ko.observable();
-      self.appConfigurada = ko.observable();
+      self.navDataProvider = ko.observable(new ArrayDataProvider(navData, { keyAttributes: 'id' }));
+      oj.gAppConfigurada = ko.observable();
       var directorioAndroid = "file:///storage/emulated/0/";
 
       self.KnockoutTemplateUtils = KnockoutTemplateUtils;
@@ -35,9 +37,48 @@ define(['knockout', 'ojs/ojcore', 'ojs/ojrouter', 'ojs/ojthemeutils', 'ojs/ojmod
               oj.gModoDependiente(resultados.rows.item(indiceFila).valor === "dependiente");
               break;
             case "configurada":
-              self.appConfigurada(resultados.rows.item(indiceFila).valor === "si");
+              oj.gAppConfigurada(resultados.rows.item(indiceFila).valor === "si");
               break;
           }
+        }
+
+        if (oj.gAppConfigurada() === true) {
+          navData = [
+            {
+              name: 'Colectivas', id: 'evalGrup',
+              iconClass: 'oj-navigationlist-item-icon demo-icon-font-24 demo-people-icon-24'
+            },
+            {
+              name: 'Individuales', id: 'evalIndv',
+              iconClass: 'oj-navigationlist-item-icon demo-icon-font-24 demo-person-icon-24'
+            },
+            {
+              name: 'Estadísticas', id: 'estUtils',
+              iconClass: 'oj-navigationlist-item-icon demo-icon-font-24 demo-chart-icon-24'
+            }
+          ];
+  
+          if (oj.gModoDependiente() !== true) {
+            self.router.configure({
+              'evalGrup': { label: 'Evaluaciones colectivas', isDefault: true },
+              'evalIndv': { label: 'Evaluación individual' },
+              'estUtils': { label: 'Estadísticas OMS' },
+              'datEsc': { label: 'Datos escolares' }
+            });
+            navData.push({
+              name: 'Escolares', id: 'datEsc',
+              iconClass: 'oj-navigationlist-item-icon demo-icon-font-24 demo-library-icon-24'
+            });
+          } else {
+            self.router.configure({
+              'evalGrup': { label: 'Evaluaciones colectivas', isDefault: true },
+              'evalIndv': { label: 'Evaluación individual' },
+              'estUtils': { label: 'Estadísticas OMS' }
+            });
+          }
+
+          oj.Router.sync();
+          self.navDataProvider(new ArrayDataProvider(navData, { keyAttributes: 'id' }));          
         }
       }
 
@@ -73,55 +114,12 @@ define(['knockout', 'ojs/ojcore', 'ojs/ojrouter', 'ojs/ojthemeutils', 'ojs/ojmod
       // Save the theme so we can perform platform specific navigational animations
       var platform = ThemeUtils.getThemeTargetPlatform();
 
-      // Navigation setup
-      var navData = [
-        {
-          name: 'Bienvenido', id: 'config',
-        }
-      ];
-
       // Router setup
-      self.router = Router.rootInstance;
+      self.router = Router.rootInstance;        
 
-      if (self.appConfigurada() === true) {
-        navData = [
-          {
-            name: 'Colectivas', id: 'evalGrup',
-            iconClass: 'oj-navigationlist-item-icon demo-icon-font-24 demo-people-icon-24'
-          },
-          {
-            name: 'Individuales', id: 'evalIndv',
-            iconClass: 'oj-navigationlist-item-icon demo-icon-font-24 demo-person-icon-24'
-          },
-          {
-            name: 'Estadísticas', id: 'estUtils',
-            iconClass: 'oj-navigationlist-item-icon demo-icon-font-24 demo-chart-icon-24'
-          }
-        ];
-
-        if (oj.gModoDependiente() !== true) {
-          self.router.configure({
-            'evalGrup': { label: 'Evaluaciones colectivas', isDefault: true },
-            'evalIndv': { label: 'Evaluación individual' },
-            'estUtils': { label: 'Estadísticas OMS' },
-            'datEsc': { label: 'Datos escolares' }
-          });
-          navData.push({
-            name: 'Escolares', id: 'datEsc',
-            iconClass: 'oj-navigationlist-item-icon demo-icon-font-24 demo-library-icon-24'
-          });
-        } else {
-          self.router.configure({
-            'evalGrup': { label: 'Evaluaciones colectivas', isDefault: true },
-            'evalIndv': { label: 'Evaluación individual' },
-            'estUtils': { label: 'Estadísticas OMS' }
-          });
-        }
-      } else {
-        self.router.configure({
-          'config': { label: 'Bienvenido', isDefault: true }
-        });
-      }
+      self.router.configure({
+        'config': { label: 'Bienvenido', isDefault: true }
+      });
 
       Router.defaults['urlAdapter'] = new Router.urlParamAdapter();
       // Callback function that can return different animations based on application logic.
@@ -184,10 +182,7 @@ define(['knockout', 'ojs/ojcore', 'ojs/ojrouter', 'ojs/ojthemeutils', 'ojs/ojmod
         }, manejarErrores);
       };
 
-
-
-
-      self.navDataProvider = new ArrayDataProvider(navData, { keyAttributes: 'id' });
+      //self.navDataProvider = new ArrayDataProvider(navData, { keyAttributes: 'id' });
 
       // Header Setup
       self.getHeaderModel = function () {

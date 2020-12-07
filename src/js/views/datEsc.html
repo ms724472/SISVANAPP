@@ -27,11 +27,11 @@
                 <span slot='startIcon' class='oj-ux-ico-file-add'></span>
                 Agregar escuela
               </oj-button>
-              <oj-button id='editar-alumno' display='icons'>
+              <oj-button id='editar-alumno' display='icons' on-oj-action="[[editarEscuela]]">
                 <span slot='startIcon' class='oj-ux-ico-add-edit-page'></span>
                 Editar escuela
               </oj-button>
-              <oj-button id='editar-alumno' display='icons'>
+              <oj-button id='editar-alumno' display='icons' on-oj-action="[[eliminarEscuela]]">
                 <span slot='startIcon' class='oj-ux-ico-file-remove'></span>
                 Eliminar escuela
               </oj-button>
@@ -44,29 +44,53 @@
     </div>
   </div>
 </div>
-<oj-dialog style="display:none;width: 100%;max-width: unset;" id="dialogo-nueva-escuela" dialog-title="Agregar nueva escuela">
+<oj-dialog style="display:none;width: 100%;max-width: unset;" id="dialogo-nueva-escuela" dialog-title="[[tituloDialogoEscuela]]">
   <div id="cuperpo-dialogo-escuela" slot="body">
     <div class="oj-form-layout">
       <div class="oj-form">
         <div class="oj-flex">
           <oj-flex-item style="width: 100%;">
             <oj-label for="campo-cct" show-required>Clave de escuela:</oj-label>
-            <oj-input-text class="campo" id="campo-cct" required></oj-input-text>
+            <oj-input-text class="campo" id="campo-cct" value="{{campoCCT}}" validators="[[validadorCCT]]" 
+            required translations='{
+                "required": {
+                  "messageSummary": "Valor requerido.",  
+                  "messageDetail": "No puede estar vacio."}}'></oj-input-text>
             <oj-label for="campo-nombre" show-required>Nombre:</oj-label>
-            <oj-input-text class="campo" id="campo-nombre" required></oj-input-text>
+            <oj-input-text class="campo" id="campo-nombre" value="{{campoNombre}}" validators="[[validadorNombre]]" 
+            required translations='{
+                "required": {
+                  "messageSummary": "Valor requerido.",  
+                  "messageDetail": "No puede estar vacio."}}'></oj-input-text>
             <oj-label for="campo-direccion" show-required>Direcci&oacute;n:</oj-label>
-            <oj-input-text class="campo" id="campo-direccion" required></oj-input-text>
+            <oj-input-text class="campo" id="campo-direccion" value="{{campoDireccion}}" validators="[[validadorGeo]]" 
+            required translations='{
+                "required": {
+                  "messageSummary": "Valor requerido.",  
+                  "messageDetail": "No puede estar vacio."}}'></oj-input-text>
             <oj-label for="campo-colonia" show-required>Colonia:</oj-label>
-            <oj-input-text class="campo" id="campo-colonia" required></oj-input-text>
+            <oj-input-text class="campo" id="campo-colonia" value="{{campoColonia}}" validators="[[validadorGeo]]" 
+            required translations='{
+                "required": {
+                  "messageSummary": "Valor requerido.",  
+                  "messageDetail": "No puede estar vacio."}}'></oj-input-text>
             <oj-label for="campo-codigo-postal" show-required>C&oacute;digo Postal:</oj-label>
-            <oj-input-text class="campo" id="campo-codigo-postal" required></oj-input-text>
+            <oj-input-text class="campo" id="campo-codigo-postal" value="{{campoCodigoPostal}}" validators="[[validadorPostal]]" 
+            required translations='{
+                "required": {
+                  "messageSummary": "Valor requerido.",  
+                  "messageDetail": "No puede estar vacio."}}'></oj-input-text>
             <oj-label for="campo-telefono" show-required>Tel&eacute;fono:</oj-label>
-            <oj-input-text class="campo" id="campo-telefono" required></oj-input-text>
+            <oj-input-text class="campo" id="campo-telefono" value="{{campoTelefono}}" validators="[[validadorTelefonico]]" 
+            required translations='{
+                "required": {
+                  "messageSummary": "Valor requerido.",  
+                  "messageDetail": "No puede estar vacio."}}'></oj-input-text>
             <oj-label for="campo-estado" show-required>Estado:</oj-label>
-            <oj-select-one class="campo" id="campo-estado" options="[[datosEstados]]" on-value-changed="[[estadoSeleccionado]]" required>
+            <oj-select-one class="campo" id="campo-estado" value="{{campoEstado}}" options="[[datosEstados]]" on-value-changed="[[estadoSeleccionado]]" required>
             </oj-select-one>            
             <oj-label for="campo-municipio" show-required>Municipio:</oj-label>
-            <oj-select-one class="campo" id="campo-municipio" options="[[datosMunicipios]]" required>
+            <oj-select-one class="campo" id="campo-municipio" options="[[datosMunicipios]]" value="{{campoMunicipio}}" required>
             </oj-select-one>
           </oj-flex-item>
         </div>
@@ -75,29 +99,57 @@
   </div>
   <div style="padding-top: 0;" slot="footer">
     <oj-button id="boton-cancelar-escuela" on-oj-action="[[cerrarDialogoEscuela]]">Cancelar</oj-button>
-    <oj-button id="boton-agregar-escuela">Agregar</oj-button>
+    <oj-button id="boton-agregar-escuela" on-oj-action="[[agregarEscuela]]">
+      <span>
+        <oj-bind-text value="[[botonDialogoEscuela]]"></oj-bind-text>
+      </span>
+    </oj-button>
   </div>
 </oj-dialog>
-<oj-dialog style="display:none;width: 100%;max-width: unset;" id="dialogo-nuevo-grupo" dialog-title="Agregar nuevo grupo">
+<oj-dialog style="display:none;width: 100%;max-width: unset;" id="dialogo-nuevo-grupo" dialog-title="[[tituloDialogoGrupo]]">
   <div id="cuperpo-dialogo-grupo" slot="body">
     <div class="oj-form-layout">
       <div class="oj-form">
         <div class="oj-flex">
           <oj-flex-item style="width: 100%;">
             <oj-label for="fecha-toma">Fecha toma en campo:</oj-label>
-            <oj-input-date id="fecha-toma" class="campo"></oj-input-date>
+            <oj-input-date id="fecha-toma" class="campo" value="{{fechaToma}}" converter="[[convertidorFechas]]"></oj-input-date>
             <oj-label for="campo-grado"  show-required>Grado:</oj-label>                       
-            <oj-select-one id="campo-grado" class="campo" options="[[datosGrados]]" required>
+            <oj-select-one id="campo-grado" class="campo" options="[[datosGrados]]" value="{{campoGrado}}" required>
             </oj-select-one>
             <oj-label for="campo-letra" show-required>Letra:</oj-label>
-            <oj-input-text id="campo-letra" class="campo"></oj-input-text>
+            <oj-input-text id="campo-letra" class="campo"value="{{campoLetra}}" validators="[[validadorLetra]]" 
+            required translations='{
+                "required": {
+                  "messageSummary": "Valor requerido.",  
+                  "messageDetail": "No puede estar vacio."}}'></oj-input-text>
           </oj-flex-item>
         </div>
       </div>
     </div>
   </div>
   <div style="padding-top: 0;" slot="footer">
-    <oj-button id="boton-cancelar-escuela" on-oj-action="[[cerrarDialogoGrupo]]">Cancelar</oj-button>
-    <oj-button id="boton-agregar-escuela">Agregar</oj-button>
+    <oj-button id="boton-cancelar-grupo" on-oj-action="[[cerrarDialogoGrupo]]">Cancelar</oj-button>
+    <oj-button id="boton-agregar-grupo" on-oj-action="[[agregarGrupo]]">
+      <span>
+        <oj-bind-text value="[[botonDialogoGrupo]]"></oj-bind-text>
+      </span>
+    </oj-button>
+  </div>
+</oj-dialog>
+<oj-dialog style="justify-content:center;display:none;position: absolute;top: 150px;" id="dialogo-notif-grupo" dialog-title="[[tituloNotificacionGrupo]]">
+  <div slot="body" style="text-align: center;">
+    <span>
+      <oj-bind-text value="[[mensajeGrupo]]"></oj-bind-text>
+    </span>
+    <h1>
+      <span>
+        <oj-bind-text value="[[grupoFinal]]"></oj-bind-text>
+      </span>
+    </h1>
+  </div>
+  <div style="padding-top: 0;" slot="footer">
+    <oj-button id="boton-cancelar-grupo" on-oj-action="[[cancelarEliminar]]" :style.display="[[ocultarCancelar() === true ? 'none' : 'flex']]">Cancelar</oj-button>
+    <oj-button id="boton-cancelar-grupo" on-oj-action="[[aceptarGrupo]]">Aceptar</oj-button>
   </div>
 </oj-dialog>

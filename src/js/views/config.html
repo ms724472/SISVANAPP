@@ -16,10 +16,10 @@
   <!-- This is where your main page content will be loaded -->
   <div class="oj-applayout-content">
     <div role="main" class="oj-hybrid-applayout-content">
-      <div class="oj-hybrid-padding">
-        <h3>Asistente de primer uso</h3>
-        <div style="text-align: center;">
-          Antes de comenzar a utilizar la aplicaci&oacute;n es necesario comenzar a completar los parametros iniciales, por favor complete todos los campos:
+      <div class="oj-hybrid-padding" style="text-align: center;">
+        <h4>Asistente de primer uso</h4>
+        <div>
+          Antes de comenzar a utilizar la aplicaci&oacute;n completa todos los par&aacute;metros iniciales:
         </div>
         <br/>
         <br/>
@@ -31,21 +31,32 @@
         <br/>
         <br/>
         <oj-label for="servidor" show-required>Direcci&oacute;n del servidor:</oj-label>
-        <oj-input-text id="servidor" disabled="[[modoApp() === 'dependiente' ? false : true]]"></oj-input-text>
+        <oj-input-text id="servidor" value="{{servidor}}" disabled="[[modoApp() === 'dependiente' ? false : true]]" validators='[[validadorDireccionServidor]]'></oj-input-text>
         <br/>
         <br/>
-        <oj-label for="usuario" show-required>Usuario:</oj-label>
-        <oj-input-text id="servidor"></oj-input-text>
+        <oj-label for="usuario" show-required>Usuario (Correo electr&oacute;nico):</oj-label>
+        <oj-input-text id="usuario" value="{{usuario}}" validators="[[validadorEmail]]" required></oj-input-text>
         <br/>
         <br/>
-        <oj-label for="servidor" show-required>Contrase&ncaron;a:</oj-label>
-        <oj-input-password id="contrasenia"></oj-input-password>
+        <oj-label for="contrasenia" show-required>Contrase&ncaron;a (8 o mas caracteres, una may&uacute;scula, una min&uacute;scula, un n&uacute;mero y un car&aacute;cter especial):</oj-label>
+        <oj-input-password id="contrasenia" value="{{contrasenia}}" validators='[[validadorContrasenia]]' required></oj-input-password>
         <br/>
         <br/>
-        <oj-button style="width: 100%;" chroming="callToAction">
+        <oj-label for="confContrasenia" show-required>Confirma la contrase&ncaron;a:</oj-label>
+        <oj-input-password id="confContrasenia" value="{{confContrasenia}}" validators='[[validadorContrasenia]]' required></oj-input-password>
+        <br/>
+        <br/>
+        <oj-button style="width: 100%;" chroming="callToAction" on-oj-action="[[completarInstalacion]]">
           Finalizar
         </oj-button>
       </div>
     </div>
   </div>
 </div>
+<oj-dialog style="display:none" id="dialogoCargando" cancel-behavior="none" dialog-title="Cargando...">
+  <div slot="body">
+    <p>Cargando la informaci&oacute;n espere...</p>
+    <oj-progress class="oj-progress-bar-embedded" id="progressbar" value="-1"></oj-progress>
+    <p></p>
+  </div>
+</oj-dialog>

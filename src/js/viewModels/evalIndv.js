@@ -206,7 +206,7 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
             gruposEscuelaActual.push(grupoBD);
           }
           
-          if(indiceFila === numFilas-2) {
+          if(indiceFila === numFilas-1) {
             grupos[idEscuelaActual.toString()] = gruposEscuelaActual;
           }
         }
@@ -542,9 +542,14 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
         return (invertida ? -1 : 1) * (aniosDiferencia * 12 + mesesDiferencia + correcionMeses);
       };
 
-      function procesarMedicionesDB(transaccion, resultados) {
+      function procesarMedicionesDB(transaccion, resultados) {        
         medicionesExistentes = [];
         var numFilas = resultados.rows.length;
+
+        if(numFilas === 0) {
+          return;
+        }
+
         var jsonMediciones = [];
         var historicoContador = 0;
         var historicoIMC = [];  
@@ -638,12 +643,18 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
 
       function procesarDatosDB(transaccion, resultados) {
         var numFilas = resultados.rows.length;
+        if(numFilas === 0) {
+          alert("Favor de seleccionar un alumno válido.");
+          return;
+        }
+
         for (var indiceFila = 0; indiceFila < numFilas; indiceFila++) {
           var fila = resultados.rows.item(indiceFila);
           var compFecha = fila.fecha_nac.split("-");
           var gruposEscuela = grupos[fila.id_escuela.toString()];
           var grado = "";
           var grupo = "";
+
           gruposEscuela.some(function(grupoActual) {
             if(grupoActual.value === fila.id_grupo) {
               var compGrupo = grupoActual.label.split(" ");     
@@ -652,13 +663,23 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
               return true;
             }
           });
+
+          var escuelaLocal;
+          
+          self.origenDatosEscuelas().data.some(function(escuelaAlumno){
+            if(fila.id_escuela === escuelaAlumno.value) {
+              escuelaLocal = escuelaAlumno.label;
+              return true;
+            }
+          });       
+          
           var datosJSON = {
             nombre: fila.nombre,
             apellido_p: fila.apellido_p,
             apellido_m: fila.apellido_m,
             sexo: fila.sexo.toUpperCase(),
             fecha_nac: compFecha[2] + "/" + compFecha[1] + "/" + compFecha[0],
-            escuela: self.origenDatosEscuelas().data[fila.id_escuela].label,
+            escuela: escuelaLocal,
             grado: grado,
             grupo: grupo,
             id_grupo: fila.id_grupo,
