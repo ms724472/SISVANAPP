@@ -36,7 +36,7 @@
               Editar alumno
             </oj-button>
 
-            <oj-button id='eliminar-alumno' display='icons' :style.display="[[oj.gModoDependiente() ? 'none' : 'inline-flex']]">
+            <oj-button id='eliminar-alumno' display='icons' on-oj-action="[[eliminarAlumno]]" :style.display="[[oj.gModoDependiente() ? 'none' : 'inline-flex']]">
               <span slot='startIcon' class='oj-ux-ico-contact-minus'></span>
               Eliminar alumno
             </oj-button>
@@ -51,7 +51,7 @@
               Editar medici&oacute;n
             </oj-button>
 
-            <oj-button id='eliminar-medicion' display='icons' :style.display="[[oj.gModoDependiente() ? 'none' : 'inline-flex']]">
+            <oj-button id='eliminar-medicion' display='icons' on-oj-action="[[eliminarMedicion]]" :style.display="[[oj.gModoDependiente() ? 'none' : 'inline-flex']]">
               <span slot='startIcon' class='oj-ux-ico-file-remove'></span>
               Eliminar medici&oacute;n
             </oj-button>
@@ -476,5 +476,16 @@
   </div>
   <div slot="footer">
     <oj-button id="botonCancelarDescarga" on-oj-action="[[aceptarError]]">Aceptar</oj-button>
+  </div>
+</oj-dialog>
+<oj-dialog style="justify-content:center;display:none;position: absolute;top: 150px;" id="dialogo-notif-eliminacion" dialog-title="[[tituloEliminacion]]">
+  <div slot="body" style="text-align: center;">
+    <span>
+      <oj-bind-text value="[[mensajeEliminacion]]"></oj-bind-text>
+    </span>
+  </div>
+  <div style="padding-top: 0;" slot="footer">
+    <oj-button id="boton-cancelar-grupo" on-oj-action="[[cancelarEliminar]]">Cancelar</oj-button>
+    <oj-button id="boton-cancelar-grupo" on-oj-action="[[aceptarEliminacion]]">Aceptar</oj-button>
   </div>
 </oj-dialog>

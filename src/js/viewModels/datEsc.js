@@ -565,43 +565,11 @@ define(['knockout', 'jquery', 'appController', 'ojs/ojmodule-element-utils', 'ac
         });
       }
 
-      var consultaEliminarGrupoT = "SELECT * FROM grupos WHERE id_escuela = ?";
-        oj.gConexionDB().transaction(function (transaccion) {
-          transaccion.executeSql(consultaEliminarGrupoT,
-            [13], function(transaccion, resultados) {   
-              console.log(transaccion);
-              var numFilas = resultados.rows.length;           
-              console.log(numFilas);              
-              var fila = resultados.rows.item(0);
-              console.log(fila);
-              console.log(resultados.rows.item(1));
-            }, manejarErrores);
-        }, function (error) {
-          alert("Error al eliminar el grupo, consulte al soporte técnico.");
-          console.log(error.message);
-        });
-        /*
-        var consultaEliminarGrupo = "DELETE FROM grupos WHERE id_escuela = 4";
-        oj.gConexionDB().transaction(function (transaccion) {
-          transaccion.executeSql(consultaEliminarGrupo,
-            [], function(transaccion, resultados) {              
-              var numFilas = resultados.rows.length;           
-              console.log(numFilas);
-              var fila = resultados.rows.item(0);
-              console.log(fila);
-            }, manejarErrores);
-        }, function (error) {
-          alert("Error al eliminar el grupo, consulte al soporte técnico.");
-          console.log(error.message);
-        });*/
-
       function eliminarGrupo(idGrupo) {
         var consultaEliminarGrupo = "DELETE FROM grupos WHERE id_grupo = ?";
-        console.log("Entro7 "+ idGrupo);
         oj.gConexionDB().transaction(function (transaccion) {
           transaccion.executeSql(consultaEliminarGrupo,
-            [idGrupo], function(transaccion, resultados) {                            
-              console.log("Entro8 " + idGrupo);
+            [idGrupo], function(transaccion, resultados) {     
               if(self.tituloNotificacionGrupo() === "Eliminar grupo") {                
                 alert("El grupo ha sido eliminado satisfactoriamente."); 
                 self.cargarEscuelas();   
@@ -615,14 +583,12 @@ define(['knockout', 'jquery', 'appController', 'ojs/ojmodule-element-utils', 'ac
       }
 
       function eliminarAlumnos(transaccion, resultados, grupoActual) {
-        console.log("Entro5");
         var consultaEliminarAlumnos = "DELETE FROM alumnos WHERE id_alumno = ?";
         var consultaEliminarMediciones = "DELETE FROM datos WHERE id_alumno = ?";
         var numFilas = resultados.rows.length;
         var contadorAsincrono = 0;
 
         if(numFilas === 0) {
-          console.log("Entro6");
           eliminarGrupo(grupoActual);
         }
 
@@ -634,9 +600,6 @@ define(['knockout', 'jquery', 'appController', 'ojs/ojmodule-element-utils', 'ac
                 oj.gConexionDB().transaction(function (transaccionC) {
                   transaccionC.executeSql(consultaEliminarAlumnos,
                     [fila.id_alumno], function(transaccionD, resultados) {
-                      console.log(fila.id_alumno);
-                      console.log(indiceFila);
-                      console.log(numFilas-1);
                       if(contadorAsincrono === numFilas-1) {
                         eliminarGrupo(grupoActual);
                       } else {
@@ -658,7 +621,6 @@ define(['knockout', 'jquery', 'appController', 'ojs/ojmodule-element-utils', 'ac
       self.eliminarTodoElGrupo = function (idGrupo) {
         var consultaEliminarAlumnos = "SELECT id_alumno FROM alumnos WHERE id_grupo = ?";
         oj.gConexionDB().transaction(function (transaccion) {
-          console.log("Entro4");
           transaccion.executeSql(consultaEliminarAlumnos,
             [idGrupo], function(transaccion, resultados) {
               eliminarAlumnos(transaccion, resultados, idGrupo);

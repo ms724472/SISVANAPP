@@ -67,6 +67,8 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
       self.medidaACalcular = ko.observable("");
       self.limiteAlumno = ko.observable(0);
       self.deshabilitarFecha = ko.observable(false);
+      self.tituloEliminacion = ko.observable();
+      self.mensajeEliminacion = ko.observable();      
 
       self.tituloIMC = ko.pureComputed(function () {
         return {
@@ -175,7 +177,7 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
 
       function manejarErrores(error) {
         alert("Error durante la descarga de datos escolares, intente nuevamente o reinicie la aplicación.");
-        console.log("Error en la base de datos: " + JSON.stringify(error));
+        console.log("Error en la base de datos: " + error.message);
       }
 
       function procesarGrupos(transaccion, resultados) {
@@ -542,7 +544,12 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
         return (invertida ? -1 : 1) * (aniosDiferencia * 12 + mesesDiferencia + correcionMeses);
       };
 
-      function procesarMedicionesDB(transaccion, resultados) {        
+      function procesarMedicionesDB(transaccion, resultados) { 
+        var listaMediciones = document.getElementById("listaMediciones"); 
+        if (listaMediciones !== undefined && listaMediciones !== null) {
+          listaMediciones.remove();
+        }
+              
         medicionesExistentes = [];
         var numFilas = resultados.rows.length;
 
@@ -1353,7 +1360,7 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
         var listaMediciones = document.getElementById("listaMediciones");
         if (self.idAlumno() === undefined || self.idAlumno() === null || self.idAlumno() === "" || Object.keys(datosAlumnoActual).length === 0) {
           alert("Favor de seleccionar un alumno");
-        }else if(listaMediciones === undefined || listaMediciones === null) {
+        } else if(listaMediciones === undefined || listaMediciones === null) {
           alert("Para editar mediciones es necesario tener al menos una.");
         } else {
           var mediciones = listaMediciones.getElementsByClassName("oj-expanded");
@@ -1515,6 +1522,11 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
             var consultaEstadisticas = "SELECT normalizador, mediana, coeficiente_variacion \n"
               + "FROM " + tabla + " WHERE id_percentil = ?";
 
+            if(meses < 61) {              
+              alert("Favor de revisar la fecha de nacimiento de alumno.");
+              reject();
+            }
+
             oj.gConexionDB().transaction(function (transaccion) {
               transaccion.executeSql(consultaEstadisticas, [sexo.toLowerCase() + meses], function (transaccion, resultados) {
                 var contador = resultados.rows.length;
@@ -1533,7 +1545,6 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
                 }
               }, function (error) {
                 alert("Problemas con la aplicación, por favor reiniciala: " + error.code);
-                console.log(error.message);
                 reject();
               }, manejarErrores);
             });
@@ -1756,6 +1767,95 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
             document.getElementById('dialogoCargando').close();
           });  
         }
+      };
+
+      self.eliminarAlumno = function() {
+        if (self.idAlumno() === undefined || self.idAlumno() === null || self.idAlumno() === "" || Object.keys(datosAlumnoActual).length === 0) {
+          alert("Favor de seleccionar un alumno.");
+          return;
+        }
+        self.tituloEliminacion("Eliminar Alumno");
+        self.mensajeEliminacion("Al eliminar un alumno, se eliminarán también todas sus mediciones, esta operación puede corromper la base de datos, ¿desea continuar?");
+        document.getElementById("dialogo-notif-eliminacion").open();
+      };
+
+      self.eliminarMedicion = function () {
+        var listaMediciones = document.getElementById("listaMediciones");
+        if (self.idAlumno() === undefined || self.idAlumno() === null || self.idAlumno() === "" || Object.keys(datosAlumnoActual).length === 0) {
+          alert("Favor de seleccionar un alumno.");
+        } else if (listaMediciones === undefined || listaMediciones === null) {
+          alert("Para eliminar mediciones es necesario tener al menos una.");
+        } else {
+          var mediciones = listaMediciones.getElementsByClassName("oj-expanded");
+          if (mediciones.length < 1) {
+            alert("Favor de seleccionar una medición");
+          }
+          else {
+            self.tituloEliminacion("Eliminar Medición");
+            self.mensajeEliminacion("¿Seguro que desea eliminar esta medida?");
+            document.getElementById("dialogo-notif-eliminacion").open();
+          }
+        }
+      };
+
+      self.aceptarEliminacion = function () {
+        document.getElementById("dialogo-notif-eliminacion").close();
+        document.getElementById('dialogoCargando').open();
+        if (self.tituloEliminacion() === "Eliminar Alumno") {
+          var consultaEliminarMediciones = "DELETE FROM datos WHERE id_alumno = ?";
+          oj.gConexionDB().transaction(function (transaccion) {
+            transaccion.executeSql(consultaEliminarMediciones,
+              [self.idAlumno()], function () {
+                var consultaEliminarAlumno = "DELETE FROM alumnos WHERE id_alumno = ?";
+                oj.gConexionDB().transaction(function (transaccion) {
+                  transaccion.executeSql(consultaEliminarAlumno,
+                    [self.idAlumno()], function () {
+                      alert("El alumno ha siso eliminado exitosamente.");
+                      self.datosAlumno(new oj.ArrayDataProvider([{NoData: ""}]));
+                      self.idAlumno("");
+                      var listaMediciones = document.getElementById("listaMediciones");
+                      if(listaMediciones !== undefined || listaMediciones !== null) {
+                        listaMediciones.innerHTML = "";
+                      }
+                      self.datosIMC(new oj.ArrayDataProvider([{NoData: ""}]));
+                      self.datosEstatura(new oj.ArrayDataProvider([{NoData: ""}]));
+                      self.datosPeso(new oj.ArrayDataProvider([{NoData: ""}]));
+                      document.getElementById('dialogoCargando').close();
+                    }, manejarErrores);
+                }, function (error) {
+                  alert("Error al alumno, consulte al soporte técnico.");
+                  document.getElementById('dialogoCargando').close();
+                  console.log(error.message);
+                });
+              }, manejarErrores);
+          }, function (error) {
+            alert("Error al eliminar al alumno, consulte al soporte técnico.");
+            document.getElementById('dialogoCargando').close();
+            console.log(error.message);
+          });
+        } else {
+          var mediciones = document.getElementById("listaMediciones").getElementsByClassName("oj-expanded");
+          var fechaMedicion = mediciones[0].firstChild.innerText;
+          var compFecha = fechaMedicion.split("/");
+          fechaMedicion = (compFecha[2] + '-' + compFecha[1] + '-' + compFecha[0]);
+          var consultaEliminarAlumno = "DELETE FROM datos WHERE id_alumno = ? and fecha = ?";
+          oj.gConexionDB().transaction(function (transaccion) {
+            transaccion.executeSql(consultaEliminarAlumno,
+              [self.idAlumno(), fechaMedicion], function () {
+                alert("La medición ha siso eliminada exitosamente.");
+                document.getElementById('dialogoCargando').close();
+                self.obtenerInfo();
+              }, manejarErrores);
+          }, function (error) {
+            alert("Error al eliminar la medición, consulte al soporte técnico.");
+            document.getElementById('dialogoCargando').consultaEliminarMediciones();
+            console.log(error.message);
+          });
+        }
+      };
+
+      self.cancelarEliminar = function() {
+        document.getElementById("dialogo-notif-eliminacion").close();
       };
 
       self.crearNuevoAlumno = function () {
