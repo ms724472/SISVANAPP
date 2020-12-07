@@ -809,6 +809,8 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
             console.log("Error en la base de datos: " + error.message);
           });
         }
+
+        document.getElementById('datosAlumno').expanded = 'true';
       };
 
       self.valorMedidaCambio = function (event) {

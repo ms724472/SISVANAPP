@@ -57,6 +57,11 @@
   vertical-align: middle;
 }
 
+#login-icon{
+  content:url("images/logo.png");
+  width: 50%;
+}
+
 .medida {
   position: absolute;
   right: 0px;

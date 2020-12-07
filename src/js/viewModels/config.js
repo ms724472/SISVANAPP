@@ -11,7 +11,7 @@ define(['knockout', 'appController', 'ojs/ojmodule-element-utils', 'accUtils', '
 'ojs/ojinputtext', 'ojs/ojprogress', 'ojs/ojdialog'],
  function(ko, app, moduleUtils, accUtils, AsyncRegExpValidator, ArrayDataProvider) {
 
-    function AboutViewModel() {
+    function ModeloAsistente() {
       var self = this;
       self.modoApp = ko.observable("dependiente");  
       self.servidor = ko.observable("");   
@@ -125,9 +125,14 @@ define(['knockout', 'appController', 'ojs/ojmodule-element-utils', 'accUtils', '
         } else {
           document.getElementById("dialogoCargando").open();
           var falla = false;
-          var indiceValor = 0;
           var parametros = ["configurada", "modo", "desconectada", "usuario", "contrasenia"];
-          valores = ["si", "independiente", "si", self.usuario(), self.contrasenia()];
+          valores = {
+            configurada: "si",
+            modo: "independiente",
+            desconectada: "si",
+            usuario: self.usuario(),
+            contrasenia: self.contrasenia()
+          };
 
           parametros.some(function (parametro) {
             if(falla === true) {
@@ -138,12 +143,13 @@ define(['knockout', 'appController', 'ojs/ojmodule-element-utils', 'accUtils', '
 
             oj.gConexionDB().transaction(function (transaccion) {
               transaccion.executeSql(consultaActualizarParametros,
-                [valores[indiceValor], parametro], function (transaccion, resultados) {
+                [valores[parametro], parametro], function (transaccion, resultados) {
                   if(parametro === "contrasenia") {
                     alert("Aplicación configurada exitosamente.");
                     document.getElementById("dialogoCargando").close();
                     oj.gOfflineMode(true);
                     oj.gModoDependiente(false);
+                    document.getElementById("formulario-config").style.display = "none";
                     self.redireccionar();
                   }
                  }, function (error) {
@@ -151,7 +157,7 @@ define(['knockout', 'appController', 'ojs/ojmodule-element-utils', 'accUtils', '
                   alert("Error en la configuracion, borrer los datos de la aplicación y reintente nuevamente.");
                   console.log("Error en la base de datos: " + error.message);
                 });
-            }, function (error) {              
+            }, function (error) {
               falla = true;
               alert("Error durante la configuracion, por favor borre los datos de almacenamiento y vuelva a intentar.");
               console.log("Error en la base de datos: " + error.message);
@@ -198,6 +204,6 @@ define(['knockout', 'appController', 'ojs/ojmodule-element-utils', 'accUtils', '
      * return a constructor for the ViewModel so that the ViewModel is constructed
      * each time the view is displayed.
      */
-    return AboutViewModel;
+    return ModeloAsistente;
   }
 );

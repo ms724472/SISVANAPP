@@ -1,0 +1,48 @@
+<!--
+ Copyright (c) 2014, 2019, Oracle and/or its affiliates.
+ The Universal Permissive License (UPL), Version 1.0
+ -->
+ <div class="oj-hybrid-applayout-page">
+    <div class="oj-applayout-fixed-top">
+        <!--
+         ** Oracle JET V8.0.0 hybrid mobile application header pattern.
+         ** Please see the Oracle JET Cookbook App Shell: Hybrid Mobile demos for
+         ** more information on how to use this pattern.
+      -->
+      <header role="banner" class="oj-hybrid-applayout-header">
+        <oj-module config="[[headerConfig]]"></oj-module>
+      </header>
+      </div>
+    <!-- This is where your main page content will be loaded -->
+    <div class="oj-applayout-content">
+      <div role="main" class="oj-hybrid-applayout-content">
+        <div id="formulario-sesion">
+            <div class="oj-hybrid-padding" style="text-align: center;">
+                <div style="text-align: center;">
+                    <span role="img" id="login-icon" title="Logo NACE" alt="Logo NACE"></span>
+                    <h4>Proyecto NACE</h4>
+                </div>
+                <br />
+                <br />
+                <oj-label for="usuario" show-required>Usuario:</oj-label>
+                <oj-input-text id="usuario" value="{{usuario}}" required></oj-input-text>
+                <br />
+                <br />
+                <oj-label for="contrasenia" show-required>Contrase&ncaron;a:</oj-label>
+                <oj-input-password id="contrasenia" value="{{contrasenia}}" required></oj-input-password>
+                <br />
+                <br />
+                <oj-button style="width: 100%;" chroming="callToAction" on-oj-action="[[validarCredenciales]]">
+                    Iniciar Sesi&oacute;n
+                </oj-button>
+            </div>
+        </div>
+        <div id="cargando-sesion" style="position:relative;display: none;">
+            <div style="text-align: center;position: fixed;top: 40%;width: 100%;">
+                <oj-progress-circle size='lg' value='-1'></oj-progress-circle>
+                <h4 style="width: 100%;text-align: center;">Cargando, por favor espere...</h4>
+            </div>
+        </div>
+      </div>
+    </div>
+  </div>

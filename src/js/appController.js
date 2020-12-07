@@ -42,45 +42,15 @@ define(['knockout', 'ojs/ojcore', 'ojs/ojrouter', 'ojs/ojthemeutils', 'ojs/ojmod
           }
         }
 
-        if (oj.gAppConfigurada() === true) {
-          navData = [
-            {
-              name: 'Colectivas', id: 'evalGrup',
-              iconClass: 'oj-navigationlist-item-icon demo-icon-font-24 demo-people-icon-24'
-            },
-            {
-              name: 'Individuales', id: 'evalIndv',
-              iconClass: 'oj-navigationlist-item-icon demo-icon-font-24 demo-person-icon-24'
-            },
-            {
-              name: 'Estadísticas', id: 'estUtils',
-              iconClass: 'oj-navigationlist-item-icon demo-icon-font-24 demo-chart-icon-24'
-            }
-          ];
-  
-          if (oj.gModoDependiente() !== true) {
-            self.router.configure({
-              'evalGrup': { label: 'Evaluaciones colectivas', isDefault: true },
-              'evalIndv': { label: 'Evaluación individual' },
-              'estUtils': { label: 'Estadísticas OMS' },
-              'datEsc': { label: 'Datos escolares' }
-            });
-            navData.push({
-              name: 'Escolares', id: 'datEsc',
-              iconClass: 'oj-navigationlist-item-icon demo-icon-font-24 demo-library-icon-24'
-            });
-          } else {
-            self.router.configure({
-              'evalGrup': { label: 'Evaluaciones colectivas', isDefault: true },
-              'evalIndv': { label: 'Evaluación individual' },
-              'estUtils': { label: 'Estadísticas OMS' }
-            });
-          }
+        if (oj.gAppConfigurada() === true) {  
+          self.router.configure({
+            'login': { label: 'Inicio Sesión', isDefault: true }
+          });
+        }
 
           oj.Router.sync();
-          self.navDataProvider(new ArrayDataProvider(navData, { keyAttributes: 'id' }));          
+          self.navDataProvider(new ArrayDataProvider([], { keyAttributes: 'id' }));          
         }
-      }
 
       function manejarErrores(error) {
         alert("Error durante la inicialización, intente reiniciando la aplicación, si la falla persiste contecte al soporte técnico");
