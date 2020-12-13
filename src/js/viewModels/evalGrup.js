@@ -596,26 +596,71 @@ define(['ojs/ojcore', 'knockout', 'appController', 'ojs/ojmodule-element-utils',
       };
 
       self.descargarImagen = function () {
-        var createPDFRequest = new XMLHttpRequest();
-        createPDFRequest.open('POST', oj.gWSUrl() + "generarImagen", true);
-        createPDFRequest.responseType = "arraybuffer";
-        createPDFRequest.onreadystatechange = function () {
-          if (this.readyState == 4) {
-            if (this.status == 200) {
-              var blob = new Blob([this.response], { type: "image/png" });
-              oj.gGuardarArchivos("Reporte.png", blob);
-            
-            } else {
-              alert("Error en el servidor, favor de comunicarse con el administrador.");
-            }
-          }
+        document.getElementById('dialogoCargando').open();
+        var idSVG;
+
+        switch(self.evaluacionSeleccionada()) {
+          case "eval-escuela":
+            idSVG = 0;
+            break;
+          case "eval-grupal":
+            idSVG = 2;
+            break;
+          default:
+            idSVG = 4;
+            break;
         }
-        var idSVG = self.evaluacionSeleccionada() === "eval-grupal" ? 2 : 0;
-        var alto = document.getElementsByTagName("svg")[idSVG].clientHeight;
-        var ancho = document.getElementsByTagName("svg")[idSVG].clientWidth;
-        var svg = document.getElementsByTagName('svg')[idSVG].outerHTML;
-        var cuerpoPeticion = { alto: alto, ancho: ancho, svg: svg, tipo: self.evaluacionSeleccionada() === "eval-grupal" ? "grupo" : "escuela" };
-        createPDFRequest.send(JSON.stringify(cuerpoPeticion));
+        var svgDOM = document.getElementsByTagName("svg")[idSVG];
+        var alto = svgDOM.clientHeight;
+        var ancho = svgDOM.clientWidth;
+        var svg = svgDOM.outerHTML;
+        var cuerpoPeticion = { alto: alto, ancho: ancho, svg: svg, tipo: self.evaluacionSeleccionada() === "eval-grupal" ? "grupo" : "escuela" };        
+        oj.gObtenerArchivo("generarImagen", [cuerpoPeticion], "Grafico.png");
+      };
+
+      self.descargarExcel = function () {
+        document.getElementById('dialogoCargando').open();
+        var query = "SELECT strftime('%d/%m/%Y', datos.fecha) 'Fecha Medición', escuelas.nombre 'Escuela', \n" +
+                    "grupos.anio_ingreso 'Grado', grupos.letra 'Grupo', alumnos.id_alumno 'Identificador Alumno', \n" +
+                    "upper((alumnos.apellido_p || ' ' || alumnos.apellido_m || ' ' || alumnos.nombre)) 'Nombre Alumno', \n" +
+                    "upper(alumnos.sexo) 'Sexo',\n" +
+                    "strftime('%d/%m/%Y', alumnos.fecha_nac) 'Fecha de Nacimiento',\n" +
+                    "datos.masa 'Peso',\n" +
+                    "datos.estatura 'Talla',\n" +
+                    "datos.imc 'IMC',\n" +
+                    "datos.perimetro_cuello 'Perimetro Cuello',\n" +
+                    "datos.cintura 'Cintura',\n" +
+                    "datos.triceps 'Triceps',\n" +
+                    "datos.subescapula 'Subescapular',\n" +
+                    "datos.pliegue_cuello 'Pliegue Cuello'\n" +
+                    "FROM datos INNER JOIN alumnos ON datos.id_alumno = alumnos.id_alumno\n" +
+                    "INNER JOIN grupos on alumnos.id_grupo = grupos.id_grupo \n" +
+                    "INNER JOIN escuelas ON grupos.id_escuela = escuelas.id_escuela\n" +
+                    "WHERE grupos.id_escuela = ? AND datos.fecha between ? and ?";
+
+        oj.gConexionDB().transaction(function (transaccion) {
+          transaccion.executeSql(query,
+            [self.escuelaAEvaluar(), self.valorDesde(), self.valorHasta()], function (transaccion, resultados) {
+              var numFilas = resultados.rows.length;
+              var jsonDatos = [];
+
+              for (var indiceFila = 0; indiceFila < numFilas; indiceFila++) {
+                var fila = resultados.rows.item(indiceFila);
+                var fechaHasta = new Date(self.valorHasta());
+                var fechaIngreso = new Date('08/01/' + fila["Grado"]);
+                var diferencia = self.diferenciaMeses(fechaIngreso, fechaHasta, false)/12;
+                fila["Grado"] = Math.ceil(diferencia).toString();
+                fila["IMC"] = fila["IMC"].toFixed(2);
+                jsonDatos.push(fila);
+              }
+
+              oj.gObtenerArchivo("generarExcelGrupal", jsonDatos, "Antropometria.xlsx");
+            }, manejarErrores);
+        }, function (error) {
+          alert("Error durante la descarga de datos escolares, intente nuevamente o reinicie la aplicación.");
+          document.getElementById('dialogoCargando').close();
+          console.log("Error en la base de datos: " + error.message);
+        });
       };
 
       self.ingresarParametros = function() {

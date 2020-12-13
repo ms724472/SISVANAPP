@@ -119,7 +119,8 @@ define(['knockout', 'ojs/ojcore', 'ojs/ojrouter', 'ojs/ojthemeutils', 'ojs/ojmod
       function escribirArchivo(direccionArchivo, binario) {
         direccionArchivo.createWriter(function (writer) {
           writer.onwriteend = function () {
-            alert("El archivo ha sido guardado en la carpeta de Descargas.");
+            alert("El archivo ha sido guardado en la carpeta de Descargas.");            
+            document.getElementById('dialogoCargando').close();
           };
 
           writer.seek(0);
@@ -127,6 +128,16 @@ define(['knockout', 'ojs/ojcore', 'ojs/ojrouter', 'ojs/ojthemeutils', 'ojs/ojmod
 
         }, manejarErrores);
       }
+
+      oj.gObtenerArchivo = function(funcion, parametros, nombre) {
+        cordova.exec(function(binario) {
+          oj.gGuardarArchivos(nombre, binario);
+        }, function(error) {
+          alert("Error durante el procesamiento del archivo.");
+          console.log(error);
+          document.getElementById('dialogoCargando').close();
+        }, "ProcesadorArchivos", funcion, parametros);
+      };
 
       // Funcion global para el guardado de archivos
       oj.gGuardarArchivos = function (nombre, binario) {
@@ -138,15 +149,16 @@ define(['knockout', 'ojs/ojcore', 'ojs/ojrouter', 'ojs/ojthemeutils', 'ojs/ojmod
             function (directorio) {
               //Aqui se especifica el nombre del archivo
               var fechaActual = new Date();
-              var fechaRegistro = fechaActual.toJSON().slice(0, 19);
-              fechaRegistro = fechaRegistro.replace("T", "-").replace(":", "-").replace(":", "-");
+              var componentes = fechaActual.toLocaleString("es-MX", {timeZone: "America/Mexico_City"}).split(" ");
+              var subComponentes = componentes[0].split("/");
+              var fechaRegistro = subComponentes[2] + subComponentes[1] + subComponentes[0] + "-" + componentes[1].replace(/:/g, "");
               var nombreFinal = nombre.split(".")[0] + "-" + fechaRegistro + "." + nombre.split(".")[1];
               directorio.getFile(nombreFinal, {
                 create: true,
                 exclusive: false
               },
                 function (direccionArchivo) {
-                  escribirArchivo(direccionArchivo, binario)
+                  escribirArchivo(direccionArchivo, binario);
                 }, manejarErrores);
             }, manejarErrores);
         }, manejarErrores);

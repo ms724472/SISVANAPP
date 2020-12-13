@@ -30,5 +30,13 @@
     },
     "is_top_level": true,
     "variables": {}
+  },
+  "iteso.sisvan.android": {
+    "source": {
+      "type": "local",
+      "path": "C:\\Users\\etiburci\\Documents\\Master\\SISVANAPP\\hybrid\\node_modules\\procesador-archivos"
+    },
+    "is_top_level": true,
+    "variables": {}
   }
 }

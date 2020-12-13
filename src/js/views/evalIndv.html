@@ -14,6 +14,64 @@
     </header>
   </div>
   <!-- This is where your main page content will be loaded -->
+  <oj-chart id="graficoIMCExcel" style="position: absolute;z-index: -1000;opacity: 0;" type="line" data="[[datosIMC]]" animation-on-display="auto"
+    animation-on-data-change="auto" translations.label-no-data="Sin datos" translations.label-series="Indicador"
+    translations.label-group="Meses" translations.label-value="Valor" orientation="vertical" x-axis="[[tituloIMC]]"
+    hover-behavior="dim" style="max-width:500px;width:100%;height:350px;display: inline-block;"
+    style-defaults.line-type="curved" legend.rendered="off">
+    <template slot="itemTemplate" data-oj-as="item">
+      <oj-chart-item value="[[item.data.valor]]" group-id="[[ [item.data.mes] ]]" series-id="[[item.data.serie]]">
+      </oj-chart-item>
+    </template>
+    <template slot="seriesTemplate" data-oj-as="series">
+      <oj-chart-series color="[[series.id.includes('3') ? '#000000': 
+                                                            series.id.includes('2') ? '#990000': 
+                                                            series.id.includes('1') ? '#FF9933': 
+                                                            series.id.includes('0') ? '#006600':
+                                                            colorIndicador]]"
+        marker-shape="[[series.id === 'imc' ? 'human': null]]" marker-size="[[series.id === 'imc' ? 10 : 0]]"
+        marker-displayed="on" line-width="1">
+      </oj-chart-series>
+    </template>
+  </oj-chart>
+  <oj-chart id="graficoTallaExcel" style="position: absolute;z-index: -1000;opacity: 0;" type="line" data="[[datosEstatura]]" animation-on-display="auto" legend.rendered="off"
+    animation-on-data-change="auto" x-axis="[[tituloTalla]]" orientation="vertical" hover-behavior="dim"
+    style="max-width:500px;width:100%;height:350px;display: inline-block;" style-defaults.line-type="curved"
+    translations.label-no-data="Sin datos" translations.label-series="Indicador" translations.label-group="Meses"
+    translations.label-value="Valor">
+    <template slot="itemTemplate" data-oj-as="item">
+      <oj-chart-item value="[[item.data.valor]]" group-id="[[ [item.data.mes] ]]" series-id="[[item.data.serie]]">
+      </oj-chart-item>
+    </template>
+    <template slot="seriesTemplate" data-oj-as="series">
+      <oj-chart-series color="[[series.id.includes('3') ? '#000000': 
+                                          series.id.includes('2') ? '#990000': 
+                                          series.id.includes('1') ? '#FF9933': 
+                                          series.id.includes('0') ? '#006600':
+                                          colorIndicador]]" marker-shape="[[series.id === 'talla' ? 'human': null]]"
+        marker-size="[[series.id === 'talla' ? 10 : 0]]" marker-displayed="on" line-width="1">
+      </oj-chart-series>
+    </template>
+  </oj-chart>
+  <oj-chart id="graficoPesoExcel" style="position: absolute;z-index: -1000;opacity: 0;" type="line" data="[[datosPeso]]" animation-on-display="auto" legend.rendered="off"
+    animation-on-data-change="auto" x-axis="[[tituloPeso]]" orientation="vertical" hover-behavior="dim"
+    style="max-width:500px;width:100%;height:350px;display: inline-block;" style-defaults.line-type="curved"
+    translations.label-no-data="Sin datos" translations.label-series="Indicador" translations.label-group="Meses"
+    translations.label-value="Valor">
+    <template slot="itemTemplate" data-oj-as="item">
+      <oj-chart-item value="[[item.data.valor]]" group-id="[[ [item.data.mes] ]]" series-id="[[item.data.serie]]">
+      </oj-chart-item>
+    </template>
+    <template slot="seriesTemplate" data-oj-as="series">
+      <oj-chart-series color="[[series.id.includes('3') ? '#000000': 
+                                          series.id.includes('2') ? '#990000': 
+                                          series.id.includes('1') ? '#FF9933': 
+                                          series.id.includes('0') ? '#006600':
+                                          colorIndicador]]" marker-shape="[[series.id === 'peso' ? 'human': null]]"
+        marker-size="[[series.id === 'peso' ? 10 : 0]]" marker-displayed="on" line-width="1">
+      </oj-chart-series>
+    </template>
+  </oj-chart>
   <div class="oj-applayout-content">
     <div role="main" class="oj-hybrid-applayout-content">
       <div class="oj-hybrid-padding">
@@ -56,7 +114,7 @@
               Eliminar medici&oacute;n
             </oj-button>
           
-            <oj-button id='editar-alumno' display='icons'>
+            <oj-button id='editar-alumno' display='icons' on-oj-action="[[descargarExcel]]">
               <span slot='startIcon' class='oj-ux-ico-file-excel'></span>
               Descargar informaci&oacute;n
             </oj-button>
@@ -314,7 +372,7 @@
       <div class="oj-form">
         <div class="oj-flex">
           <oj-flex-item style="width: 100%;">
-            <oj-label for="nuevaFMedicion" show-required>Fecha medicion:</oj-label>
+            <oj-label for="nuevaFMedicion" show-required>Fecha medici&oacute;n:</oj-label>
             <oj-input-date class="campo" required="true" disabled="[[deshabilitarFecha]]" id="nuevaFMedicion" value="{{fechaMedicion}}" converter=[[convertidorFechas]] validators="[[validadorFechas]]" 
             required translations='{
                 "required": {
@@ -342,7 +400,7 @@
                 <span slot="endIcon" class="oj-ux-ico-calculator" role="img"></span>
               </oj-button>
             </oj-input-text>
-            <oj-label for="nuevaPerimetroCuelloMedicion">Perimetro del Cuello:</oj-label>
+            <oj-label for="nuevaPerimetroCuelloMedicion">Per&iacute;metro del Cuello:</oj-label>
             <oj-input-text id="nuevaPerimetroCuelloMedicion" class="campo" value="{{perCuello}}" virtual-keyboard="number" validators="[[validadorMedicion]]">
               <oj-button slot="end" display="icons" chroming="borderless" on-oj-action="[[calcularMediana]]">
                 Calcular mediana
@@ -356,7 +414,7 @@
                 <span slot="endIcon" class="oj-ux-ico-calculator" role="img"></span>
               </oj-button>
             </oj-input-text>
-            <oj-label for="nuevaTricepsMedicion">Triceps:</oj-label>
+            <oj-label for="nuevaTricepsMedicion">Tr&iacute;ceps:</oj-label>
             <oj-input-text id="nuevaTricepsMedicion" class="campo" value="{{triceps}}" virtual-keyboard="number" validators="[[validadorMedicion]]">
               <oj-button slot="end" display="icons" chroming="borderless" on-oj-action="[[calcularMediana]]">
                 Calcular mediana

@@ -91,10 +91,51 @@ define(['knockout', 'appController', 'ojs/ojmodule-element-utils', 'accUtils', '
         oj.Router.sync();
       }
 
+      self.actualizarParametrosBD = function(parametros, valores) {
+        parametros.some(function (parametro) {
+          if(falla === true) {
+            return true;
+          }
+
+          var consultaActualizarParametros = "UPDATE parametros SET valor = ? WHERE nombre = ?";
+
+          oj.gConexionDB().transaction(function (transaccion) {
+            transaccion.executeSql(consultaActualizarParametros,
+              [valores[parametro], parametro], function (transaccion, resultados) {
+                if(parametro === "contrasenia") {
+                  alert("Aplicación configurada exitosamente.");
+                  document.getElementById("dialogoCargando").close();
+                  if(self.modoApp() === "dependiente") {                    
+                    oj.gWSUrl(self.servidor() + "/SISVANWS/rest/wls/1.0/");
+                    oj.gOfflineMode(false);
+                    oj.gModoDependiente(true);
+                  } else {
+                    oj.gOfflineMode(true);
+                    oj.gModoDependiente(false);
+                  }                  
+                  document.getElementById("formulario-config").style.display = "none";
+                  self.redireccionar();
+                }
+               }, function (error) {
+                falla = true;
+                alert("Error en la configuracion, borrer los datos de la aplicación y reintente nuevamente.");
+                console.log("Error en la base de datos: " + error.message);
+              });
+          }, function (error) {
+            falla = true;
+            alert("Error durante la configuracion, por favor borre los datos de almacenamiento y vuelva a intentar.");
+            console.log("Error en la base de datos: " + error.message);
+          });
+        });
+      }
+
       self.completarInstalacion = function() {
+        var parametros;
+        var valores;
+
         var campoUsuario = document.getElementById("usuario");
         var campoContrasenia = document.getElementById("contrasenia");
-        var campoConfContrasenia = document.getElementById("confContrasenia");
+        var campoConfContrasenia = document.getElementById("confContrasenia");        
 
         campoUsuario.validate();
         campoContrasenia.validate();
@@ -115,55 +156,51 @@ define(['knockout', 'appController', 'ojs/ojmodule-element-utils', 'accUtils', '
           return;
         }
 
-        if (self.modoApp() === "dependiente" ) {
+        if (self.modoApp() === "dependiente") {
           var campoServidor = document.getElementById("servidor");
           campoServidor.validate();
-          if (campoServidor.valid === 'invalidShown' || self.servidor() === "") {
+          if (campoServidor.valid === 'invalidShown' || self.servidor() === "" || self.servidor() === undefined) {
             alert("Proporcione una dirección válida del servidor");
             return;
           }
+
+          document.getElementById("dialogoCargando").open();
+
+          var peticionValidarServidor = new XMLHttpRequest();
+          peticionValidarServidor.open("GET", self.servidor() + "/SISVANWS/rest/wls/1.0/obtenerEscuelas");
+          peticionValidarServidor.onreadystatechange = function () {
+            if (this.readyState === 4) {
+              if (this.status === 200) {
+                parametros = ["configurada", "modo", "desconectada", "usuario", "contrasenia", "servidor"];
+                valores = {
+                  configurada: "si",
+                  modo: "dependiente",
+                  desconectada: "no",
+                  usuario: self.usuario(),
+                  contrasenia: self.contrasenia(),
+                  servidor: self.servidor()
+                };  
+                self.actualizarParametrosBD(parametros, valores);
+              } else {
+                document.getElementById("dialogoCargando").close();
+                alert("Error durante la validación del servidor, favor de contactar al administrador.")
+              }
+            }
+          };
+          peticionValidarServidor.send();
         } else {
           document.getElementById("dialogoCargando").open();
           var falla = false;
-          var parametros = ["configurada", "modo", "desconectada", "usuario", "contrasenia"];
+          parametros = ["configurada", "modo", "desconectada", "usuario", "contrasenia"];
           valores = {
             configurada: "si",
             modo: "independiente",
             desconectada: "si",
             usuario: self.usuario(),
             contrasenia: self.contrasenia()
-          };
-
-          parametros.some(function (parametro) {
-            if(falla === true) {
-              return true;
-            }
-
-            var consultaActualizarParametros = "UPDATE parametros SET valor = ? WHERE nombre = ?";
-
-            oj.gConexionDB().transaction(function (transaccion) {
-              transaccion.executeSql(consultaActualizarParametros,
-                [valores[parametro], parametro], function (transaccion, resultados) {
-                  if(parametro === "contrasenia") {
-                    alert("Aplicación configurada exitosamente.");
-                    document.getElementById("dialogoCargando").close();
-                    oj.gOfflineMode(true);
-                    oj.gModoDependiente(false);
-                    document.getElementById("formulario-config").style.display = "none";
-                    self.redireccionar();
-                  }
-                 }, function (error) {
-                  falla = true;
-                  alert("Error en la configuracion, borrer los datos de la aplicación y reintente nuevamente.");
-                  console.log("Error en la base de datos: " + error.message);
-                });
-            }, function (error) {
-              falla = true;
-              alert("Error durante la configuracion, por favor borre los datos de almacenamiento y vuelva a intentar.");
-              console.log("Error en la base de datos: " + error.message);
-            });
-          });
-        }
+          };          
+          self.actualizarParametrosBD(parametros, valores);
+        }        
       };
 
       // Below are a set of the ViewModel methods invoked by the oj-module component.

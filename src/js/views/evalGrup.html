@@ -20,7 +20,7 @@
         <div>
           <oj-button style="width: 100%;" on-oj-action="[[ingresarParametros]]">
             <span slot='startIcon' class="oj-ux-ico-content-item-search"></span>
-            Ingresar parametros de consulta
+            Ingresar par&aacute;metros de consulta
           </oj-button>
           <oj-tab-bar edge="top" selection="{{evaluacionSeleccionada}}">
             <ul>
@@ -68,7 +68,7 @@
                   <span slot='startIcon' class="oj-ux-ico-file-img"></span>
                   Descargar gr&aacute;fico
                 </oj-button>
-                <oj-button on-oj-action="[[descargarImagen]]">
+                <oj-button on-oj-action="[[descargarExcel]]">
                   <span slot='startIcon' class="oj-ux-ico-file-excel"></span>
                   Descargar listado
                 </oj-button>
@@ -129,6 +129,13 @@
                       </oj-chart-series>
                   </template>
               </oj-chart>
+              <br/>
+              <div style="width: 100%; text-align: center;">
+                <oj-button on-oj-action="[[descargarImagen]]">
+                  <span slot='startIcon' class="oj-ux-ico-file-img"></span>
+                  Descargar gr&aacute;fico
+                </oj-button>
+              </div>
             </div>
           </oj-switcher>
         </div>
@@ -160,5 +167,12 @@
   <div slot="footer">
     <oj-button id="boton-cancelar-dialogo" on-oj-action="[[cerrarDialogo]]">Cancelar</oj-button>
     <oj-button id="boton-buscar" on-oj-action="[[actualizarGraficos]]" disabled="[[sinGrupos]]">Generar gr&aacute;ficos</oj-button>
+  </div>
+</oj-dialog>
+<oj-dialog style="display:none" id="dialogoCargando" cancel-behavior="none" dialog-title="Cargando...">
+  <div slot="body">
+    <p>Cargando la informaci&oacute;n espere...</p>
+    <oj-progress class="oj-progress-bar-embedded" id="progressbar" value="-1"></oj-progress>
+    <p></p>
   </div>
 </oj-dialog>

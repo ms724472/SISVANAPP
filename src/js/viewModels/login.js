@@ -63,7 +63,7 @@ define(['knockout', 'appController', 'ojs/ojmodule-element-utils', 'accUtils', '
                 oj.Router.sync();
             }
 
-            self.validarCredenciales = function () {
+            self.validarCredenciales = function () {                        
                 var usuarioValido = false;
                 var contraseniaValida = false;
                 if(self.usuario() === "" || self.usuario() === undefined || self.contrasenia() === "" || self.contrasenia() === undefined) {

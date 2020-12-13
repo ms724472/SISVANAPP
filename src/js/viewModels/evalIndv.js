@@ -477,7 +477,7 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
                   campo.innerText = "Talla";
                   break;
               case "perimetro_cuello":
-                campo.innerText = "Perimetro del cuello";
+                campo.innerText = "Perímetro del cuello";
                 break;
               case "pliegue_cuello":
                 campo.innerText = "Pliegue del cuello";
@@ -485,6 +485,9 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
               case "subescapula":
                 campo.innerText = "Subescapular";
                 break;
+                case "triceps":
+                  campo.innerText = "Tríceps";
+                  break;
               case "diagnostico_peso":
               case "diagnostico_talla":
               case "diagnostico_imc":
@@ -1598,7 +1601,7 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
           ];
         } else {
           medicionesAlumnoActual.some(function (medicionActualAlumno) {
-            var compFecha = medicion.fecha.split("/");
+            var compFecha = medicionActualAlumno.fecha.split("/");
             if ((medicionActualAlumno.diagnostico_peso.endsWith("-M") || medicionActualAlumno.diagnostico_peso.endsWith("-E")) && 
                   medicionActualAlumno.fecha === (compFecha[2] + '-' + compFecha[1] + '-' + compFecha[0])) {
               diagnosticoPeso = diagnosticoPeso + "-M";
@@ -1757,16 +1760,19 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
               self.calcularPuntajeZ("peso", datosAlumnoActual.sexo, meses, self.peso()).then(function(puntajePeso) {
                 self.procesarMedicionBD(meses, puntajeIMC, puntajeTalla, puntajePeso, imc);
               }).catch(function(error) {
-                alert("Error durante el calculo de puntajes, intente nuevamente o reinicie la aplicación.");
+                alert("Error durante el cálculo de puntajes, intente nuevamente o reinicie la aplicación.");
+                console.log(error);
                 document.getElementById('dialogoCargando').close();
               });
             }).catch(function(error) {
-              alert("Error durante el calculo de puntajes, intente nuevamente o reinicie la aplicación.");
+              alert("Error durante el cálculo de puntajes, intente nuevamente o reinicie la aplicación.");
               document.getElementById('dialogoCargando').close();
+              console.log(error + "2");
             });  
           }).catch(function(error) {
-            alert("Error durante el calculo de puntajes, intente nuevamente o reinicie la aplicación.");
+            alert("Error durante el cálculo de puntajes, intente nuevamente o reinicie la aplicación.");
             document.getElementById('dialogoCargando').close();
+            console.log(error + "3");
           });  
         }
       };
@@ -2004,6 +2010,38 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
         self.origenDatosNombres(new oj.ArrayDataProvider([]));
         document.getElementById('dialogoBuscarAlumno').close();
         self.obtenerInfo();
+      };
+
+      self.descargarExcel = function() {
+        if (self.idAlumno() === undefined || self.idAlumno() === null || self.idAlumno() === "" || Object.keys(datosAlumnoActual).length === 0) {
+          alert("Favor de seleccionar un alumno");
+          return;
+        }
+
+        document.getElementById('dialogoCargando').open();
+        var graficoIMC = document.getElementById("graficoIMCExcel").getElementsByTagName("svg")[0];
+        var graficoTalla = document.getElementById("graficoTallaExcel").getElementsByTagName("svg")[0];
+        var graficoPeso = document.getElementById("graficoPesoExcel").getElementsByTagName("svg")[0];
+        
+        datosAlumnoActual.letra = datosAlumnoActual.grupo;
+
+        console.log(datosAlumnoActual);
+
+        medicionesAlumnoActual.forEach(function(medicion) {
+          medicion.id_alumno = self.idAlumno();
+        });
+
+        var datosAlumnos = {
+          datos: [datosAlumnoActual],
+          mediciones: medicionesAlumnoActual,
+          alto: graficoIMC.clientHeight,
+          ancho: graficoIMC.clientWidth,
+          grafico_imc : graficoIMC.outerHTML,
+          grafico_talla : graficoTalla.outerHTML,
+          grafico_peso : graficoPeso.outerHTML
+        };
+
+        oj.gObtenerArchivo("generarExcelIndividual", [datosAlumnos], "Reporte.xlsx");
       };
 
       /**

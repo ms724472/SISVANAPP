@@ -419,9 +419,9 @@ define(['knockout', 'jquery', 'appController', 'ojs/ojmodule-element-utils', 'ac
           transaccion.executeSql(consultaEscuela,
             parametros, function(transaccion, resultados) {
               if(self.botonDialogoEscuela() === "Agregar") {
-                alert("Escuela agregada exitosamente.");
+                alert("Escuela agregada satisfactoriamente.");
               } else {
-                alert("Escuela actualizada exitosamente,");
+                alert("Escuela actualizada satisfactoriamente,");
                 self.grupoSeleccionado(undefined);
               }              
               self.cerrarDialogoEscuela();
