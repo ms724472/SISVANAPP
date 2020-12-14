@@ -75,7 +75,30 @@
         </div>
       </div>
     </div>
-    
+    <oj-dialog style="display:none" id="dialogoConfiguracion" dialog-title="Configuración">
+      <div slot="body">
+        <oj-label for="servidor">Dirección del servidor:</oj-label>
+        <oj-input-text id="servidor" value="{{oj.servidor}}" disabled="[[oj.gModoDependiente() ? false : true]]" validators='[[oj.gValidadorDireccionServidor]]'></oj-input-text>   
+        <br/>
+        <br/>
+        <oj-label for="contrasenia">Contraseña actual:</oj-label>
+        <oj-input-password id="contrasenia" value="{{oj.contrasenia}}" required></oj-input-password>
+        <br/>
+        <br/>
+        <oj-label for="nueva-contrasenia">Nueva contraseña:</oj-label>
+        <oj-input-password id="nueva-contrasenia" value="{{oj.nuevaContrasenia}}" validators='[[oj.gValidadorContrasenia]]' required></oj-input-password> 
+        <br/>
+        <br/>
+        <oj-label for="confirmar-contrasenia">Confirmar contraseña:</oj-label>
+        <oj-input-password id="confirmar-contrasenia" value="{{oj.confContrasenia}}" validators='[[oj.gValidadorContrasenia]]' required></oj-input-password>       
+      </div>
+      <div slot="footer">
+        <oj-button id="cancelar-configurador" on-oj-action="[[oj.gCancelarConfig]]">Cancelar
+        </oj-button>
+        <oj-button id="boton-configurador" on-oj-action="[[oj.gCambiarParametros]]">Guardar
+        </oj-button>
+      </div>
+    </oj-dialog>
     <script type="text/javascript" src="js/libs/require/require.js"></script>
     <script type="text/javascript" src="js/main.js"></script>
 

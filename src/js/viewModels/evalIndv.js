@@ -69,6 +69,7 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
       self.deshabilitarFecha = ko.observable(false);
       self.tituloEliminacion = ko.observable();
       self.mensajeEliminacion = ko.observable();      
+      self.modoCalculo = ko.observable("media");
 
       self.tituloIMC = ko.pureComputed(function () {
         return {
@@ -816,11 +817,52 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
         document.getElementById('datosAlumno').expanded = 'true';
       };
 
+      self.calcularMediciones = function(modo) {
+        if(modo === "media") {
+          self.calcularMedia();
+        } else {
+          self.calcularMediana();
+        }
+      }
+
+      self.cambioCalculo = function(event) {
+        self.calcularMediciones(event.detail.value);
+      };
+
       self.valorMedidaCambio = function (event) {
         var valor = event.detail.value;
         self.medidaVacia(valor.trim().length === 0);
         self.nuevaMedida(valor);
       }.bind(self);
+
+      self.calcularMediana = function() {
+        if(self.medidas().length === 0) {
+          self.medianaCalculada("");
+          return;
+        }
+
+        var mediana;
+        var listaMediciones = JSON.parse(JSON.stringify(self.medidas()));
+        var mitad = Math.floor(listaMediciones.length / 2);
+
+        listaMediciones.sort(function (a, b) {
+          var valorA = parseFloat(a.item);
+          var valorB = parseFloat(b.item);
+          return valorA === valorB ? 0 : (valorA < valorB ? -1 : 1);
+        });
+
+        if(listaMediciones.length % 2 !== 0) {
+          mediana = parseFloat(listaMediciones[mitad].item);
+        } else {
+          var preMitad = parseFloat(listaMediciones[mitad - 1].item);
+          var mitad = parseFloat(listaMediciones[mitad].item);
+          mediana = (preMitad + mitad) / 2;
+        }
+
+        mediana = (Math.round(mediana * 100) / 100).toFixed(2);
+
+        self.medianaCalculada(mediana);
+      };
 
       self.calcularMedia = function() {
         if(self.medidas().length === 0) {
@@ -851,9 +893,9 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
         }
         var medidaFormateada = (Math.round(parseFloat(self.nuevaMedida()) * 100) / 100).toFixed(2);
         numeroDeMedida++;
-        self.medidas.push({ id: numeroDeMedida, item:  medidaFormateada});
-        self.nuevaMedida("");
-        self.calcularMedia();        
+        self.medidas.push({ id: numeroDeMedida, item:  medidaFormateada});        
+        self.calcularMediciones(self.modoCalculo());
+        self.nuevaMedida("");     
       }.bind(self);
 
       self.eliminarMedida = function() {
@@ -862,11 +904,10 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
             return (item.id === id);
           });
         }.bind(self));
-+
-        self.calcularMedia();   
+        self.calcularMediciones(self.modoCalculo());
       }.bind(self);
 
-      self.calcularMediana = function(event) {
+      self.abrirDialogoCalculo = function(event) {
         self.medidaACalcular(event.target.parentElement.parentElement.id);
         document.getElementById("dialogoMediana").open();
       };

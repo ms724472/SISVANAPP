@@ -13,6 +13,9 @@
             <oj-bind-text value="[[pageTitle]]"></oj-bind-text>
         </h1>
     </div>
+    <oj-button id='botonConfiguracion' :style.display="[[pageTitle === 'Inicio Sesión' || pageTitle === 'Bienvenido' ? 'none' : 'inline-flex']]" display='icons' chroming="solid" on-oj-action="[[oj.gAbrirConfig]]">
+        <span slot="startIcon" :class="demo-icon-font demo-gear-icon-16"></span>
+    </oj-button>
 </div>
 <!--<div class="oj-flex-bar-end">
     Add additional buttons here

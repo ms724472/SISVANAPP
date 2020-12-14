@@ -384,7 +384,7 @@
                             "required": {
                               "messageSummary": "Valor requerido.",  
                               "messageDetail": "No puede estar vacio."}}'>
-              <oj-button slot="end" display="icons" chroming="borderless" on-oj-action="[[calcularMediana]]">
+              <oj-button slot="end" display="icons" chroming="borderless" on-oj-action="[[abrirDialogoCalculo]]">
                 Calcular mediana
                 <span slot="endIcon" class="oj-ux-ico-calculator" role="img"></span>
               </oj-button>
@@ -395,42 +395,42 @@
                             "required": {
                               "messageSummary": "Valor requerido.",  
                               "messageDetail": "No puede estar vacio."}}'>
-              <oj-button slot="end" display="icons" chroming="borderless" on-oj-action="[[calcularMediana]]">
+              <oj-button slot="end" display="icons" chroming="borderless" on-oj-action="[[abrirDialogoCalculo]]">
                 Calcular mediana
                 <span slot="endIcon" class="oj-ux-ico-calculator" role="img"></span>
               </oj-button>
             </oj-input-text>
             <oj-label for="nuevaPerimetroCuelloMedicion">Per&iacute;metro del Cuello:</oj-label>
             <oj-input-text id="nuevaPerimetroCuelloMedicion" class="campo" value="{{perCuello}}" virtual-keyboard="number" validators="[[validadorMedicion]]">
-              <oj-button slot="end" display="icons" chroming="borderless" on-oj-action="[[calcularMediana]]">
+              <oj-button slot="end" display="icons" chroming="borderless" on-oj-action="[[abrirDialogoCalculo]]">
                 Calcular mediana
                 <span slot="endIcon" class="oj-ux-ico-calculator" role="img"></span>
               </oj-button>
             </oj-input-text>
             <oj-label for="nuevaCinturaMedicion">Cintura:</oj-label>
             <oj-input-text id="nuevaCinturaMedicion" class="campo" value="{{cintura}}" virtual-keyboard="number" validators="[[validadorMedicion]]">
-              <oj-button slot="end" display="icons" chroming="borderless" on-oj-action="[[calcularMediana]]">
+              <oj-button slot="end" display="icons" chroming="borderless" on-oj-action="[[abrirDialogoCalculo]]">
                 Calcular mediana
                 <span slot="endIcon" class="oj-ux-ico-calculator" role="img"></span>
               </oj-button>
             </oj-input-text>
             <oj-label for="nuevaTricepsMedicion">Tr&iacute;ceps:</oj-label>
             <oj-input-text id="nuevaTricepsMedicion" class="campo" value="{{triceps}}" virtual-keyboard="number" validators="[[validadorMedicion]]">
-              <oj-button slot="end" display="icons" chroming="borderless" on-oj-action="[[calcularMediana]]">
+              <oj-button slot="end" display="icons" chroming="borderless" on-oj-action="[[abrirDialogoCalculo]]">
                 Calcular mediana
                 <span slot="endIcon" class="oj-ux-ico-calculator" role="img"></span>
               </oj-button>
             </oj-input-text>
             <oj-label for="nuevaSubescapulaMedicion">Subescapular:</oj-label>
             <oj-input-text id="nuevaSubescapulaMedicion" class="campo" value="{{subEscapular}}" virtual-keyboard="number" validators="[[validadorMedicion]]">
-              <oj-button slot="end" display="icons" chroming="borderless" on-oj-action="[[calcularMediana]]">
+              <oj-button slot="end" display="icons" chroming="borderless" on-oj-action="[[abrirDialogoCalculo]]">
                 Calcular mediana
                 <span slot="endIcon" class="oj-ux-ico-calculator" role="img"></span>
               </oj-button>
             </oj-input-text>
             <oj-label for="nuevaPliegueCuelloMedicion">Pliegue del cuello:</oj-label>
             <oj-input-text id="nuevaPliegueCuelloMedicion" class="campo" value="{{pliegueCuello}}" virtual-keyboard="number" validators="[[validadorMedicion]]">
-              <oj-button slot="end" display="icons" chroming="borderless" on-oj-action="[[calcularMediana]]">
+              <oj-button slot="end" display="icons" chroming="borderless" on-oj-action="[[abrirDialogoCalculo]]">
                 Calcular mediana
                 <span slot="endIcon" class="oj-ux-ico-calculator" role="img"></span>
               </oj-button>
@@ -481,7 +481,13 @@
     <oj-button id="botonDescargar" on-oj-action="[[descargarEscuela]]">Descargar</oj-button>
   </div>
 </oj-dialog>
-<oj-dialog  style="display:none;width: 95%;" id="dialogoMediana" dialog-title="Calcular mediana">
+<oj-dialog  style="display:none;width: 95%;" id="dialogoMediana">
+  <div slot="header">
+    <oj-select-one id="modo-calculo" on-value-changed="[[cambioCalculo]]" value="{{modoCalculo}}">
+      <oj-option value="media">Calcular media</oj-option>
+      <oj-option value="mediana">Calcular mediana</oj-option>
+    </oj-select-one>
+  </div>
   <div slot="body">
     <oj-label for="nuevaMedida">Introduce la medici&oacute;n:</oj-label>
     <oj-flex-item style="width: 100%;display: inline-flex;">

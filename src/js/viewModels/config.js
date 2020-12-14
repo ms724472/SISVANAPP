@@ -91,7 +91,9 @@ define(['knockout', 'appController', 'ojs/ojmodule-element-utils', 'accUtils', '
         oj.Router.sync();
       }
 
-      self.actualizarParametrosBD = function(parametros, valores) {
+      self.actualizarParametrosBD = function(parametros, valores) {        
+        var falla = false;
+
         parametros.some(function (parametro) {
           if(falla === true) {
             return true;
@@ -183,14 +185,13 @@ define(['knockout', 'appController', 'ojs/ojmodule-element-utils', 'accUtils', '
                 self.actualizarParametrosBD(parametros, valores);
               } else {
                 document.getElementById("dialogoCargando").close();
-                alert("Error durante la validación del servidor, favor de contactar al administrador.")
+                alert("Error durante la validación del servidor, favor de contactar al administrador.");
               }
             }
           };
           peticionValidarServidor.send();
         } else {
           document.getElementById("dialogoCargando").open();
-          var falla = false;
           parametros = ["configurada", "modo", "desconectada", "usuario", "contrasenia"];
           valores = {
             configurada: "si",

@@ -8,15 +8,23 @@
 /*
  * Your application specific code will go here
  */
-define(['knockout', 'ojs/ojcore', 'ojs/ojrouter', 'ojs/ojthemeutils', 'ojs/ojmodule-element-utils', 'ojs/ojmoduleanimations', 'ojs/ojarraydataprovider', 'ojs/ojknockouttemplateutils', 'ojs/ojknockout', 'ojs/ojmodule-element'],
-  function (ko, oj, Router, ThemeUtils, moduleUtils, ModuleAnimations, ArrayDataProvider, KnockoutTemplateUtils) {
+define(['knockout', 'ojs/ojcore', 'ojs/ojrouter', 'ojs/ojthemeutils', 'ojs/ojmodule-element-utils', 
+'ojs/ojmoduleanimations', 'ojs/ojarraydataprovider', 'ojs/ojknockouttemplateutils', 'ojs/ojasyncvalidator-regexp', 'ojs/ojknockout', 
+'ojs/ojmodule-element', 'ojs/ojdialog', 'ojs/ojbutton', 'ojs/ojinputtext'],
+  function (ko, oj, Router, ThemeUtils, moduleUtils, ModuleAnimations, ArrayDataProvider, KnockoutTemplateUtils, AsyncRegExpValidator) {
     function ControllerViewModel() {
       var self = this;
       var navData = [];
       oj.gOfflineMode = ko.observable(false);
       oj.gModoDependiente = ko.observable(true);
       oj.gWSUrl = ko.observable();
+      oj.servidor = ko.observable();
+      oj.contrasenia = ko.observable();
+      oj.nuevaContrasenia = ko.observable();
+      oj.confContrasenia = ko.observable();
       oj.gConexionDB = ko.observable();
+      oj.gUsuario = ko.observable();
+      oj.gContrasenia = ko.observable();
       self.navDataProvider = ko.observable(new ArrayDataProvider(navData, { keyAttributes: 'id' }));
       oj.gAppConfigurada = ko.observable();
       var directorioAndroid = "file:///storage/emulated/0/";
@@ -25,39 +33,163 @@ define(['knockout', 'ojs/ojcore', 'ojs/ojrouter', 'ojs/ojthemeutils', 'ojs/ojmod
 
       function procesarParametros(transaccion, resultados) {
         var numFilas = resultados.rows.length;
-        for (var indiceFila = 0; indiceFila < numFilas; indiceFila++) {
+        for (var indiceFila = 0; indiceFila < numFilas; indiceFila++) {          
+          var valor = resultados.rows.item(indiceFila).valor;
           switch (resultados.rows.item(indiceFila).nombre) {
             case "desconectada":
-              oj.gOfflineMode(resultados.rows.item(indiceFila).valor === "si");
+              oj.gOfflineMode(valor === "si");
               break;
             case "servidor":
-              oj.gWSUrl(resultados.rows.item(indiceFila).valor + "/SISVANWS/rest/wls/1.0/");
+              oj.gWSUrl(valor + "/SISVANWS/rest/wls/1.0/");
+              oj.servidor(valor);
               break;
             case "modo":
-              oj.gModoDependiente(resultados.rows.item(indiceFila).valor === "dependiente");
+              oj.gModoDependiente(valor === "dependiente");
               break;
             case "configurada":
-              oj.gAppConfigurada(resultados.rows.item(indiceFila).valor === "si");
+              oj.gAppConfigurada(valor === "si");
               break;
+            case "usuario":
+              oj.gUsuario(valor);
+              break;             
+            case "contrasenia":
+              oj.gContrasenia(valor);
+              break; 
           }
         }
 
-        if (oj.gAppConfigurada() === true) {  
+        if (oj.gAppConfigurada() === true) {
           self.router.configure({
             'login': { label: 'Inicio Sesión', isDefault: true }
           });
         }
 
-          oj.Router.sync();
-          self.navDataProvider(new ArrayDataProvider([], { keyAttributes: 'id' }));          
-        }
+        if(oj.gModoDependiente() === false) {
+          oj.servidor("Sin servidor");
+        } 
+
+        oj.Router.sync();
+        self.navDataProvider(new ArrayDataProvider([], { keyAttributes: 'id' }));
+      }
 
       function manejarErrores(error) {
         alert("Error durante la inicialización, intente reiniciando la aplicación, si la falla persiste contecte al soporte técnico");
         console.log("Error en la base de datos: " + error.message);
       }
 
+      oj.gValidadorContrasenia = ko.observableArray([
+        new AsyncRegExpValidator({
+          pattern: '(?=.*\\d)(?=.*[a-z])(?=.*[A-Z]).{6,}',
+          messageDetail: "Mejore la contraseña"
+        })
+      ]);
+
+      oj.gValidadorDireccionServidor = ko.observableArray([
+        new AsyncRegExpValidator({
+          pattern: "^(?:http(s)?:\\/\\/)?[\\w.-]+(?:\\.[\\w\\.-]+)+[\\w\\-\\._~:/?#[\\]@!\\$&'\\(\\)\\*\\+,;=.]+$",
+          messageDetail: "Direccion inválida"
+        })
+      ]);
+      
+      oj.gCancelarConfig = function() {
+        oj.contrasenia("");
+        oj.nuevaContrasenia("");
+        oj.confContrasenia("");
+        document.getElementById("dialogoConfiguracion").close();
+      };
+
+      self.actualizarServidor = function () {
+        var peticionValidarServidor = new XMLHttpRequest();
+        peticionValidarServidor.open("GET", oj.servidor() + "/SISVANWS/rest/wls/1.0/obtenerEscuelas");
+        peticionValidarServidor.onreadystatechange = function () {
+          if (this.readyState === 4) {
+            if (this.status === 200) {
+              oj.gConexionDB().transaction(function (transaccion) {
+                transaccion.executeSql("UPDATE parametros SET valor = ? WHERE nombre = 'servidor'",
+                  [oj.servidor()], function () {
+                    alert("Datos actualizados satisfactoriamente.");
+                    oj.gWSUrl(oj.servidor() + "/SISVANWS/rest/wls/1.0/");
+                    oj.gCancelarConfig();
+                  }, manejarErrores);
+              }, function (error) {
+                alert("Error durante el cambio de servidor, reinicie la aplicación e intente nuevamente.");
+                console.log("Error en la base de datos: " + error.message);
+              });
+            } else {
+              alert("No es posible validar el servidor, favor de contactar al administrador.");
+            }
+          }
+        };
+        peticionValidarServidor.send();
+      };
+
+      function cambiarContrasenia(transaccion, resultados) {
+        if(resultados.rows.length === 0) {
+          alert("La contraseña no coincide, favor de revisarla.");
+        } else {
+          oj.gConexionDB().transaction(function (transaccion) {
+            transaccion.executeSql("UPDATE parametros SET valor = ? WHERE nombre = 'contrasenia'",
+              [oj.nuevaContrasenia()], function() {
+                if(oj.gModoDependiente() === true && oj.servidor() !== "" && oj.servidor() !== undefined) {
+                  self.actualizarServidor();
+                } else {
+                  alert("Datos actualizados satisfactoriamente.");
+                  oj.gCancelarConfig();
+                }                
+                oj.gContrasenia(oj.contrasenia());
+              }, manejarErrores);
+          }, function (error) {
+            alert("Error durante el cambio de contraseña, reinicie la aplicación e intente nuevamente.");
+            console.log("Error en la base de datos: " + error.message);
+          });
+        }
+      }
+
+      oj.gCambiarParametros = function() {
+        var servidor = document.getElementById("servidor");
+        var contraseniaActual = document.getElementById("contrasenia");
+        var nuevaContrasenia = document.getElementById("nueva-contrasenia");
+        var confContrasenia = document.getElementById("confirmar-contrasenia");        
+
+        if(oj.gModoDependiente() === true) {
+          if (oj.servidor() !== "" && oj.servidor() !== undefined) {
+            servidor.validate();
+            if (servidor.valid === 'invalidShown') {
+              return;
+            }
+          }
+        } if (oj.contrasenia() !== "" && oj.contrasenia() !== undefined) {
+          console.log(oj.contrasenia());
+          contraseniaActual.validate();
+          nuevaContrasenia.validate();
+          confContrasenia.validate();
+
+          if (contraseniaActual === 'invalidShown' || nuevaContrasenia.valid === 'invalidShown' || confContrasenia.valid === 'invalidShown') {
+            return;
+          }
+
+          if (oj.nuevaContrasenia() !== oj.confContrasenia()) {
+            alert("La contrasenia nueva y la confirmación deben coincidir.");
+            return;
+          }
+
+          oj.gConexionDB().transaction(function (transaccion) {
+            transaccion.executeSql("SELECT nombre from parametros WHERE nombre = 'contrasenia' AND valor = ?",
+              [oj.contrasenia()], cambiarContrasenia, manejarErrores);
+          }, function (error) {
+            alert("Error durante el cambio de contraseña, reinicie la aplicación e intente nuevamente.");
+            console.log("Error en la base de datos: " + error.message);
+          });
+        } else if(oj.gModoDependiente() === true && oj.servidor() !== "" && oj.servidor() !== undefined) {
+          self.actualizarServidor();
+        } else {
+          alert("Nada que actualizar");
+          oj.gCancelarConfig();
+        }
+      };
+
       document.addEventListener("deviceready", function () {
+        ko.applyBindings(self, document.getElementById("dialogoConfiguracion"));
         oj.gConexionDB(window.sqlitePlugin.openDatabase({ name: "sve-base-datos.db", location: 'default', createFromLocation: 1 }));
         oj.gConexionDB().transaction(function (transaccion) {
           transaccion.executeSql("SELECT * from parametros",
@@ -137,6 +269,10 @@ define(['knockout', 'ojs/ojcore', 'ojs/ojrouter', 'ojs/ojthemeutils', 'ojs/ojmod
           console.log(error);
           document.getElementById('dialogoCargando').close();
         }, "ProcesadorArchivos", funcion, parametros);
+      };
+
+      oj.gAbrirConfig = function() {
+        document.getElementById('dialogoConfiguracion').open();
       };
 
       // Funcion global para el guardado de archivos
