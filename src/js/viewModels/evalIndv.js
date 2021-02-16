@@ -1551,7 +1551,7 @@ define(['knockout', 'jquery', 'ojs/ojcore', 'appController', 'ojs/ojmodule-eleme
         self.sexoNuevoAlumno("femenino");
         self.fNacimientoNuevoAlumno("");
         self.nuevoEscuelaAlumno(null);
-        self.nuevoGrupoAlumno(-1);
+        self.nuevoGrupoAlumno(null);
         self.idDeshabilitado(false);
         if (Object.keys(grupos).length > 0) {
           self.origenDatosGrupos(new oj.ArrayDataProvider([{NoData:""}]));

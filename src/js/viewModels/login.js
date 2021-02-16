@@ -91,7 +91,7 @@ define(['knockout', 'appController', 'ojs/ojmodule-element-utils', 'accUtils', '
                             document.getElementById("cargando-sesion").style.display = "block";
                             self.redireccionar();
                         } else {
-                            alert("El usuario o la contrasña son incorrectas, por favor revíselas.")
+                            alert("El usuario o la contraseña son incorrectas, por favor revísalas.")
                         }
                       }, function(error) {
                         alert("Error de autenticación.");
